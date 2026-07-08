@@ -1,0 +1,119 @@
+.how{
+    background:#f8fafc;
+}
+
+.step-card{
+
+    position:relative;
+
+    background:white;
+
+    padding:40px 25px;
+
+    border-radius:15px;
+
+    text-align:center;
+
+    box-shadow:0 5px 20px rgba(0,0,0,.08);
+
+    transition:.3s;
+
+    height:100%;
+
+}
+
+.step-card:hover{
+
+    transform:translateY(-8px);
+
+}
+
+.step-number{
+
+    position:absolute;
+
+    top:15px;
+
+    right:20px;
+
+    width:35px;
+
+    height:35px;
+
+    border-radius:50%;
+
+    background:#2563eb;
+
+    color:white;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    font-weight:700;
+
+}
+
+.step-icon{
+
+    width:90px;
+
+    height:90px;
+
+    margin:auto;
+
+    border-radius:50%;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    background:#eef4ff;
+
+    color:#2563eb;
+
+    font-size:38px;
+
+    margin-bottom:25px;
+
+}
+
+.step-card h4{
+
+    margin-bottom:15px;
+
+    font-weight:600;
+
+}
+
+.step-card p{
+
+    color:#6b7280;
+
+    line-height:1.7;
+
+}
+
+@media(max-width:768px){
+
+.step-card{
+
+padding:30px 20px;
+
+}
+
+.step-icon{
+
+width:80px;
+
+height:80px;
+
+font-size:34px;
+
+}
+
+}

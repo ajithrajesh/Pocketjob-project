@@ -1,0 +1,63 @@
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+html{
+    scroll-behavior:smooth;
+}
+
+body{
+
+    font-family:'Poppins',sans-serif;
+
+    background:var(--light);
+
+    color:var(--text);
+
+    overflow-x:hidden;
+
+}
+
+a{
+
+    text-decoration:none;
+
+}
+
+button{
+
+    cursor:pointer;
+
+}
+
+img{
+
+    max-width:100%;
+
+    display:block;
+
+}
+
+.section{
+
+    padding:80px 0;
+
+}
+
+.title{
+
+    font-size:40px;
+
+    font-weight:700;
+
+}
+
+.subtitle{
+
+    color:var(--text-light);
+
+    margin-top:15px;
+
+}

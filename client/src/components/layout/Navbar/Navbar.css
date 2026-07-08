@@ -1,0 +1,64 @@
+.logo{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-size:28px;
+    font-weight:700;
+    color:var(--primary);
+}
+
+.logo:hover{
+    color:var(--primary);
+}
+
+.logo-icon{
+    font-size:32px;
+}
+
+.navbar{
+    padding:15px 0;
+}
+
+.nav-link{
+    font-weight:500;
+    margin:0 8px;
+    color:var(--text);
+    transition:.3s;
+}
+
+.nav-link:hover{
+    color:var(--primary);
+}
+
+.login-btn{
+    margin-left:20px;
+    border-radius:8px;
+}
+
+.register-btn{
+    border-radius:8px;
+}
+
+@media(max-width:992px){
+
+.navbar-nav{
+
+margin-top:20px;
+
+}
+
+.login-btn{
+
+margin-left:0;
+
+margin-top:10px;
+
+}
+
+.register-btn{
+
+width:100%;
+
+}
+
+}
