@@ -18,7 +18,7 @@ function FeaturedJobs() {
   
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [appliedJobIds, setAppliedJobIds] = useState(new Set());
+  const [appliedJobsStatus, setAppliedJobsStatus] = useState({});
 
   const fetchFeaturedJobs = async () => {
     try {
@@ -37,8 +37,14 @@ function FeaturedJobs() {
     if (isAuthenticated && user?.role === "user") {
       try {
         const data = await getMyAppliedJobs();
-        const ids = new Set((data.applications || []).map(app => app.job?._id || app.job));
-        setAppliedJobIds(ids);
+        const statusMap = {};
+        (data.applications || []).forEach(app => {
+          const jobId = app.job?._id || app.job;
+          if (jobId) {
+            statusMap[jobId] = app.status || "pending";
+          }
+        });
+        setAppliedJobsStatus(statusMap);
       } catch (error) {
         console.error("Failed to fetch applied jobs:", error);
       }
@@ -65,11 +71,10 @@ function FeaturedJobs() {
     try {
       await applyToJob(jobId);
       toast.success(`Successfully applied for "${jobTitle}"!`);
-      setAppliedJobIds(prev => {
-        const next = new Set(prev);
-        next.add(jobId);
-        return next;
-      });
+      setAppliedJobsStatus(prev => ({
+        ...prev,
+        [jobId]: "pending"
+      }));
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to apply for this job");
     }
@@ -147,10 +152,20 @@ function FeaturedJobs() {
                     </div>
                   </div>
 
-                  {appliedJobIds.has(job._id) ? (
-                    <button className="btn btn-success w-100" disabled>
-                      Applied
-                    </button>
+                  {appliedJobsStatus[job._id] ? (
+                    appliedJobsStatus[job._id] === "accepted" ? (
+                      <button className="btn btn-success w-100" disabled>
+                        Accepted
+                      </button>
+                    ) : appliedJobsStatus[job._id] === "rejected" ? (
+                      <button className="btn btn-danger w-100" disabled>
+                        Rejected
+                      </button>
+                    ) : (
+                      <button className="btn btn-warning text-dark w-100" disabled>
+                        Applied (Pending)
+                      </button>
+                    )
                   ) : (
                     <button className="btn btn-primary w-100" onClick={() => handleApply(job._id, job.title)}>
                       Apply Now

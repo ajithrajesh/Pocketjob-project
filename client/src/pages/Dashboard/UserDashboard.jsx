@@ -27,7 +27,7 @@ function UserDashboard() {
   const [loadingRecs, setLoadingRecs] = useState(false);
 
   // Applied Jobs State
-  const [appliedJobIds, setAppliedJobIds] = useState(new Set());
+  const [appliedJobsStatus, setAppliedJobsStatus] = useState({});
   const [appliedJobs, setAppliedJobs] = useState([]);
 
   // Profile Edit State
@@ -110,8 +110,14 @@ function UserDashboard() {
     try {
       const data = await getMyAppliedJobs();
       setAppliedJobs(data.applications || []);
-      const ids = new Set((data.applications || []).map(app => app.job?._id || app.job));
-      setAppliedJobIds(ids);
+      const statusMap = {};
+      (data.applications || []).forEach(app => {
+        const jobId = app.job?._id || app.job;
+        if (jobId) {
+          statusMap[jobId] = app.status || "pending";
+        }
+      });
+      setAppliedJobsStatus(statusMap);
     } catch (error) {
       console.error("Failed to load applied jobs", error);
     }
@@ -121,11 +127,11 @@ function UserDashboard() {
     try {
       await applyToJob(jobId);
       toast.success(`Successfully applied for "${jobTitle}"!`);
-      setAppliedJobIds(prev => {
-        const next = new Set(prev);
-        next.add(jobId);
-        return next;
-      });
+      setAppliedJobsStatus(prev => ({
+        ...prev,
+        [jobId]: "pending"
+      }));
+      fetchAppliedJobs();
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to submit application");
     }
@@ -213,33 +219,6 @@ function UserDashboard() {
 
   return (
     <div className="card shadow-sm border-0 p-4">
-      {/* Tab Navigation */}
-      <ul className="nav nav-tabs mb-4">
-        <li className="nav-item">
-          <button 
-            className={`nav-link fw-semibold ${activeTab === "search" ? "active" : ""}`}
-            onClick={() => setActiveTab("search")}
-          >
-            🔍 Job Search
-          </button>
-        </li>
-        <li className="nav-item">
-          <button 
-            className={`nav-link fw-semibold ${activeTab === "recommended" ? "active" : ""}`}
-            onClick={() => setActiveTab("recommended")}
-          >
-            ✨ Recommended Jobs
-          </button>
-        </li>
-        <li className="nav-item">
-          <button 
-            className={`nav-link fw-semibold ${activeTab === "profile" ? "active" : ""}`}
-            onClick={() => setActiveTab("profile")}
-          >
-            👤 Profile & Documents
-          </button>
-        </li>
-      </ul>
 
       {/* Tab Content: Job Search */}
       {activeTab === "search" && (
@@ -308,10 +287,20 @@ function UserDashboard() {
                         <strong>Requirements:</strong> {job.requirements?.join(", ") || "None listed"}
                       </div>
                       
-                      {appliedJobIds.has(job._id) ? (
-                        <button className="btn btn-success w-100" disabled>
-                          Applied
-                        </button>
+                      {appliedJobsStatus[job._id] ? (
+                        appliedJobsStatus[job._id] === "accepted" ? (
+                          <button className="btn btn-success w-100" disabled>
+                            Accepted
+                          </button>
+                        ) : appliedJobsStatus[job._id] === "rejected" ? (
+                          <button className="btn btn-danger w-100" disabled>
+                            Rejected
+                          </button>
+                        ) : (
+                          <button className="btn btn-warning text-dark w-100" disabled>
+                            Applied (Pending)
+                          </button>
+                        )
                       ) : (
                         <button className="btn btn-outline-primary w-100" onClick={() => handleApply(job._id, job.title)}>
                           Quick Apply
@@ -365,10 +354,20 @@ function UserDashboard() {
                         <strong>Requirements:</strong> {job.requirements?.join(", ") || "None listed"}
                       </div>
                       
-                      {appliedJobIds.has(job._id) ? (
-                        <button className="btn btn-success w-100" disabled>
-                          Applied
-                        </button>
+                      {appliedJobsStatus[job._id] ? (
+                        appliedJobsStatus[job._id] === "accepted" ? (
+                          <button className="btn btn-success w-100" disabled>
+                            Accepted
+                          </button>
+                        ) : appliedJobsStatus[job._id] === "rejected" ? (
+                          <button className="btn btn-danger w-100" disabled>
+                            Rejected
+                          </button>
+                        ) : (
+                          <button className="btn btn-warning text-dark w-100" disabled>
+                            Applied (Pending)
+                          </button>
+                        )
                       ) : (
                         <button className="btn btn-primary w-100" onClick={() => handleApply(job._id, job.title)}>
                           Quick Apply
@@ -383,11 +382,11 @@ function UserDashboard() {
         </div>
       )}
 
-      {/* Tab Content: Profile & Documents */}
+      {/* Tab Content: Profile */}
       {activeTab === "profile" && userProfile && (
-        <div className="row g-4">
-          {/* Profile Form (Left side) */}
-          <div className="col-lg-6">
+        <div className="row g-4 justify-content-center">
+          {/* Profile Form */}
+          <div className="col-lg-8">
             <div className="card border-0 bg-white shadow-sm p-4">
               <div className="d-flex justify-content-between align-items-center mb-4 border-bottom pb-2">
                 <h5 className="fw-bold text-dark m-0">Personal Profile</h5>
@@ -510,9 +509,14 @@ function UserDashboard() {
               </form>
             </div>
           </div>
+        </div>
+      )}
 
-          {/* Document Upload (Right side) */}
-          <div className="col-lg-6">
+      {/* Tab Content: Documents */}
+      {activeTab === "documents" && userProfile && (
+        <div className="row g-4 justify-content-center">
+          {/* Document Upload */}
+          <div className="col-lg-8">
             <div className="card border-0 bg-white shadow-sm p-4">
               <h5 className="fw-bold text-dark mb-4 border-bottom pb-2">Verification Documents</h5>
 
@@ -642,6 +646,58 @@ function UserDashboard() {
 
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Tab Content: My Applications */}
+      {activeTab === "applications" && (
+        <div>
+          <h4 className="fw-bold mb-4 text-dark">My Job Applications</h4>
+          {appliedJobs.length === 0 ? (
+            <div className="text-center py-5 text-muted bg-white border rounded">
+              You haven't applied to any jobs yet. Browse jobs under the "Job Search" tab!
+            </div>
+          ) : (
+            <div className="table-responsive">
+              <table className="table table-hover align-middle bg-white border border-light shadow-sm rounded mb-0">
+                <thead className="table-light">
+                  <tr>
+                    <th>Job Title</th>
+                    <th>Company</th>
+                    <th>Salary</th>
+                    <th>Location</th>
+                    <th>Date Applied</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {appliedJobs.map((app) => (
+                    <tr key={app._id}>
+                      <td>
+                        <span className="fw-bold text-dark">{app.job?.title || "Deleted Job"}</span>
+                        {app.job?.category && (
+                          <span className="badge bg-light text-secondary border ms-2">{app.job.category}</span>
+                        )}
+                      </td>
+                      <td>🏢 {app.job?.companyName || "N/A"}</td>
+                      <td className="text-success fw-semibold">{app.job?.salary || "Not Specified"}</td>
+                      <td>📍 {app.job?.location?.city ? `${app.job.location.city}, ${app.job.location.state}` : "Remote"}</td>
+                      <td className="text-muted small">{new Date(app.createdAt).toLocaleDateString()}</td>
+                      <td>
+                        {app.status === "accepted" ? (
+                          <span className="badge bg-success px-3 py-2 fs-7">Accepted</span>
+                        ) : app.status === "rejected" ? (
+                          <span className="badge bg-danger px-3 py-2 fs-7">Rejected</span>
+                        ) : (
+                          <span className="badge bg-warning text-dark px-3 py-2 fs-7">Pending</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
     </div>
