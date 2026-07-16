@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useAuth } from "../../context/AuthContext";
 import { postJob, getMyJobs, updateJob, deleteJob, getJobApplications, updateApplicationStatus } from "../../services/jobService";
@@ -14,7 +15,12 @@ import LocationAutocomplete from "../../components/common/LocationAutocomplete";
 
 function ProviderDashboard() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState("overview"); // 'overview', 'post', 'my-jobs', 'edit', 'seekers', 'applicants'
+  const [urlParams, setUrlParams] = useSearchParams();
+  const activeTab = urlParams.get("tab") || "overview";
+
+  const setActiveTab = (tabName) => {
+    setUrlParams({ tab: tabName });
+  };
   
   // Job Post State
   const [formData, setFormData] = useState({

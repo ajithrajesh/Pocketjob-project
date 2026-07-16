@@ -1,12 +1,15 @@
+import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { Navigate, Link, Outlet, useNavigate, useSearchParams } from "react-router-dom";
-import { FaUserCircle, FaBriefcase, FaBuilding, FaClipboardList, FaSignOutAlt, FaSearch, FaUser, FaFileAlt, FaSlidersH } from "react-icons/fa";
+import { FaUserCircle, FaBriefcase, FaClipboardList, FaSignOutAlt, FaSearch, FaUser, FaFileAlt, FaSlidersH, FaHome, FaTachometerAlt, FaBars, FaTimes, FaBuilding, FaPlusCircle, FaListAlt, FaUsers } from "react-icons/fa";
 
 function DashboardLayout() {
   const { user, isAuthenticated, loading, logout } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const currentTab = searchParams.get("tab") || "search";
+  const defaultTab = user?.role === "company" ? "overview" : "search";
+  const currentTab = searchParams.get("tab") || defaultTab;
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   if (loading) {
     return (
@@ -29,10 +32,33 @@ function DashboardLayout() {
 
   return (
     <div className="container-fluid p-0">
+      {/* Mobile top bar with hamburger toggle */}
+      <div className="d-md-none d-flex align-items-center justify-content-between px-3 py-2 sidebar-mobile-bar">
+        <div className="d-flex align-items-center text-white sidebar-brand">
+          <FaBriefcase className="fs-4 text-primary me-2" />
+          <span className="fs-5 fw-bold">pocketJob</span>
+        </div>
+        <button
+          className="btn btn-sm sidebar-toggle-btn"
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          aria-label="Toggle menu"
+        >
+          {sidebarOpen ? <FaTimes /> : <FaBars />}
+        </button>
+      </div>
+
+      {/* Backdrop for mobile when sidebar is open */}
+      {sidebarOpen && (
+        <div className="sidebar-backdrop d-md-none" onClick={() => setSidebarOpen(false)} />
+      )}
+
       <div className="row g-0" style={{ minHeight: "100vh" }}>
         
         {/* Sidebar */}
-        <div className="col-md-3 col-lg-2 text-white p-3 d-flex flex-column justify-content-between position-sticky top-0 sidebar-container" style={{ height: "100vh" }}>
+        <div
+          className={`col-md-3 col-lg-2 text-white p-3 d-flex flex-column justify-content-between position-sticky top-0 sidebar-container ${sidebarOpen ? "sidebar-open" : ""}`}
+          style={{ height: "100vh" }}
+        >
           <div>
             <div className="d-flex align-items-center mb-4 mt-2 px-2 text-decoration-none text-white sidebar-brand">
               <FaBriefcase className="fs-3 text-primary me-2" />
@@ -42,7 +68,7 @@ function DashboardLayout() {
             <hr className="bg-secondary opacity-25" />
 
             <div className="mb-4 sidebar-user-card">
-              <div className="small text-muted text-uppercase mb-2" style={{ fontSize: "0.7rem", letterSpacing: "0.5px" }}>Logged in as</div>
+              <div className="small text-uppercase mb-2" style={{ fontSize: "0.7rem", letterSpacing: "0.5px", color: "rgba(255,255,255,0.45)" }}>Logged in as</div>
               <div className="d-flex align-items-center">
                 <FaUserCircle className="fs-4 me-2 text-primary" />
                 <div>
@@ -60,7 +86,8 @@ function DashboardLayout() {
                   <li className="nav-item">
                     <Link
                       to="/dashboard?tab=search"
-                      className={`nav-link text-white d-flex align-items-center sidebar-nav-link ${currentTab === "search" ? "active" : "text-white-50"}`}
+                      onClick={() => setSidebarOpen(false)}
+                      className={`nav-link d-flex align-items-start sidebar-nav-link ${currentTab === "search" ? "active" : ""}`}
                     >
                       <FaSearch className="me-2" /> Job Search
                     </Link>
@@ -68,7 +95,8 @@ function DashboardLayout() {
                   <li className="nav-item">
                     <Link
                       to="/dashboard?tab=recommended"
-                      className={`nav-link text-white d-flex align-items-center sidebar-nav-link ${currentTab === "recommended" ? "active" : "text-white-50"}`}
+                      onClick={() => setSidebarOpen(false)}
+                      className={`nav-link d-flex align-items-start sidebar-nav-link ${currentTab === "recommended" ? "active" : ""}`}
                     >
                       <FaSlidersH className="me-2" /> Recommended Jobs
                     </Link>
@@ -76,7 +104,8 @@ function DashboardLayout() {
                   <li className="nav-item">
                     <Link
                       to="/dashboard?tab=applications"
-                      className={`nav-link text-white d-flex align-items-center sidebar-nav-link ${currentTab === "applications" ? "active" : "text-white-50"}`}
+                      onClick={() => setSidebarOpen(false)}
+                      className={`nav-link d-flex align-items-start sidebar-nav-link ${currentTab === "applications" ? "active" : ""}`}
                     >
                       <FaClipboardList className="me-2" /> My Applications
                     </Link>
@@ -84,7 +113,8 @@ function DashboardLayout() {
                   <li className="nav-item">
                     <Link
                       to="/dashboard?tab=profile"
-                      className={`nav-link text-white d-flex align-items-center sidebar-nav-link ${currentTab === "profile" ? "active" : "text-white-50"}`}
+                      onClick={() => setSidebarOpen(false)}
+                      className={`nav-link d-flex align-items-start sidebar-nav-link ${currentTab === "profile" ? "active" : ""}`}
                     >
                       <FaUser className="me-2" /> Profile
                     </Link>
@@ -92,22 +122,62 @@ function DashboardLayout() {
                   <li className="nav-item">
                     <Link
                       to="/dashboard?tab=documents"
-                      className={`nav-link text-white d-flex align-items-center sidebar-nav-link ${currentTab === "documents" ? "active" : "text-white-50"}`}
+                      onClick={() => setSidebarOpen(false)}
+                      className={`nav-link d-flex align-items-start sidebar-nav-link ${currentTab === "documents" ? "active" : ""}`}
                     >
                       <FaFileAlt className="me-2" /> Documents
                     </Link>
                   </li>
                 </>
+              ) : user?.role === "company" ? (
+                <>
+                  <li className="nav-item">
+                    <Link
+                      to="/dashboard?tab=overview"
+                      onClick={() => setSidebarOpen(false)}
+                      className={`nav-link d-flex align-items-start sidebar-nav-link ${currentTab === "overview" ? "active" : ""}`}
+                    >
+                      <FaBuilding className="me-2" /> Organisation Overview
+                    </Link>
+                  </li>
+                  <li className="nav-item">
+                    <Link
+                      to="/dashboard?tab=post"
+                      onClick={() => setSidebarOpen(false)}
+                      className={`nav-link d-flex align-items-start sidebar-nav-link ${currentTab === "post" ? "active" : ""}`}
+                    >
+                      <FaPlusCircle className="me-2" /> Post a Job
+                    </Link>
+                  </li>
+                  <li className="nav-item">
+                    <Link
+                      to="/dashboard?tab=my-jobs"
+                      onClick={() => setSidebarOpen(false)}
+                      className={`nav-link d-flex align-items-start sidebar-nav-link ${currentTab === "my-jobs" || currentTab === "edit" || currentTab === "applicants" ? "active" : ""}`}
+                    >
+                      <FaBriefcase className="me-2" /> My Posted Job
+                    </Link>
+                  </li>
+                  <li className="nav-item">
+                    <Link
+                      to="/dashboard?tab=seekers"
+                      onClick={() => setSidebarOpen(false)}
+                      className={`nav-link d-flex align-items-start sidebar-nav-link ${currentTab === "seekers" ? "active" : ""}`}
+                    >
+                      <FaUsers className="me-2" /> Search Seeker
+                    </Link>
+                  </li>
+                </>
               ) : (
                 <li className="nav-item">
-                  <Link to="/dashboard" className="nav-link text-white sidebar-nav-link active">
-                    🚀 Dashboard
+                  <Link to="/dashboard" onClick={() => setSidebarOpen(false)} className="nav-link d-flex align-items-start sidebar-nav-link active">
+                    <FaTachometerAlt className="me-2" /> Dashboard
                   </Link>
                 </li>
               )}
               <li className="nav-item">
-                <Link to="/" className="nav-link text-white-50 sidebar-nav-link">
-                  🏠 Back to Home
+                <Link to="/" onClick={() => setSidebarOpen(false)} className="nav-link d-flex align-items-start sidebar-nav-link">
+                  <FaHome className="me-2" /> Back to Home
                 </Link>
               </li>
             </ul>
