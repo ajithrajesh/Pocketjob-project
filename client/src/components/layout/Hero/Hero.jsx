@@ -1,8 +1,19 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import "./Hero.css";
 import { FaSearch, FaMapMarkerAlt, FaUsers, FaBriefcase } from "react-icons/fa";
 import { HiBuildingOffice2 } from "react-icons/hi2";
+import LocationAutocomplete from "../../common/LocationAutocomplete";
+import CategoryAutocomplete from "../../common/CategoryAutocomplete";
 
 function Hero() {
+  const navigate = useNavigate();
+  const [category, setCategory] = useState("");
+  const [location, setLocation] = useState("");
+
+  const handleSearch = () => {
+    navigate(`/jobs?category=${category}&location=${location}`);
+  };
   return (
     <section className="hero">
 
@@ -10,7 +21,7 @@ function Hero() {
 
         <div className="row align-items-center">
 
-          {/* Left Side */}
+         
 
           <div className="col-lg-6 hero-left">
 
@@ -36,9 +47,12 @@ function Hero() {
 
                 <FaSearch />
 
-                <input
-                  type="text"
-                  placeholder="Search jobs..."
+                <CategoryAutocomplete
+                  className=""
+                  placeholder="Search jobs (e.g. Catering)..."
+                  value={category}
+                  onChange={setCategory}
+                  style={{ flex: 1 }}
                 />
 
               </div>
@@ -47,14 +61,17 @@ function Hero() {
 
                 <FaMapMarkerAlt />
 
-                <input
-                  type="text"
+                <LocationAutocomplete
+                  className=""
                   placeholder="Location"
+                  value={location}
+                  onChange={setLocation}
+                  style={{ flex: 1 }}
                 />
 
               </div>
 
-              <button className="btn btn-primary search-btn">
+              <button className="btn btn-primary search-btn" onClick={handleSearch}>
                 Search
               </button>
 
@@ -75,7 +92,7 @@ function Hero() {
 
         </div>
 
-        {/* Statistics */}
+       
 
         <div className="row mt-5 g-4">
 

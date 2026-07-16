@@ -42,7 +42,7 @@ function Login() {
       toast.success("Login Successful");
 
       setTimeout(() => {
-        navigate("/");
+        navigate("/dashboard");
       }, 1200);
     } catch (error) {
       toast.error(
@@ -61,7 +61,7 @@ function Login() {
 
           <div className="row login-wrapper">
 
-            {/* LEFT */}
+           
 
             <div className="col-lg-6 login-left">
 
@@ -69,7 +69,7 @@ function Login() {
 
                 <FaBriefcase className="login-logo" />
 
-                <h1>WorkConnect</h1>
+                <h1>pocketJobs</h1>
 
                 <h2>
                   Find Verified Part-Time Jobs Near You
@@ -84,7 +84,6 @@ function Login() {
 
             </div>
 
-            {/* RIGHT */}
 
             <div className="col-lg-6 login-right">
 
@@ -151,13 +150,6 @@ function Login() {
 
                   <div className="login-options">
 
-                    <label>
-
-                      <input type="checkbox" />
-
-                      Remember Me
-
-                    </label>
 
                     <Link to="/forgot-password">
                       Forgot Password?

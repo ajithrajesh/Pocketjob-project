@@ -1,64 +1,70 @@
-.logo{
-    display:flex;
-    align-items:center;
-    gap:10px;
-    font-size:28px;
-    font-weight:700;
-    color:var(--primary);
+/* Navbar */
+
+.navbar {
+  background: #fff;
+  padding: 16px 0;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
 }
 
-.logo:hover{
-    color:var(--primary);
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #2563eb !important;
 }
 
-.logo-icon{
-    font-size:32px;
+.logo-icon {
+  font-size: 2rem;
 }
 
-.navbar{
-    padding:15px 0;
+.nav-link {
+  color: #1f2937 !important;
+  font-size: 1.15rem;
+  font-weight: 500;
+  margin: 0 12px;
+  transition: 0.3s;
 }
 
-.nav-link{
-    font-weight:500;
-    margin:0 8px;
-    color:var(--text);
-    transition:.3s;
+.nav-link:hover {
+  color: #2563eb !important;
 }
 
-.nav-link:hover{
-    color:var(--primary);
+/* Login Button */
+
+.login-btn {
+  width: 150px;
+  height: 50px;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0;
 }
 
-.login-btn{
-    margin-left:20px;
-    border-radius:8px;
+/* Register Button */
+
+.register-btn {
+  width: 150px;
+  height: 50px;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0;
 }
 
-.register-btn{
-    border-radius:8px;
-}
+/* Username */
 
-@media(max-width:992px){
-
-.navbar-nav{
-
-margin-top:20px;
-
-}
-
-.login-btn{
-
-margin-left:0;
-
-margin-top:10px;
-
-}
-
-.register-btn{
-
-width:100%;
-
-}
-
+.user-name {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #2563eb;
+  margin-right: 10px;
 }

@@ -1,23 +1,17 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { FaBriefcase } from "react-icons/fa";
 import { useAuth } from "../../../context/AuthContext";
 import "./Navbar.css";
 
 function Navbar() {
-  const { user, isAuthenticated, logout } = useAuth();
-  const navigate = useNavigate();
-
-  const handleLogout = () => {
-    logout();
-    navigate("/");
-  };
+  const { isAuthenticated } = useAuth();
 
   return (
     <nav className="navbar navbar-expand-lg bg-white shadow-sm sticky-top">
       <div className="container">
         <Link className="navbar-brand logo" to="/">
           <FaBriefcase className="logo-icon" />
-          <span>WorkConnect</span>
+          <span>pocketJob</span>
         </Link>
 
         <button
@@ -56,22 +50,14 @@ function Navbar() {
             </li>
 
             {isAuthenticated ? (
-              <>
-                <li className="nav-item ms-lg-3">
-                  <span className="nav-link fw-bold text-primary">
-                    Hi, {user?.firstName}
-                  </span>
-                </li>
-
-                <li className="nav-item ms-lg-2">
-                  <button
-                    className="btn btn-danger"
-                    onClick={handleLogout}
-                  >
-                    Logout
-                  </button>
-                </li>
-              </>
+              <li className="nav-item ms-lg-2">
+                <Link
+                  className="btn btn-primary"
+                  to="/dashboard"
+                >
+                  Dashboard
+                </Link>
+              </li>
             ) : (
               <>
                 <li className="nav-item">

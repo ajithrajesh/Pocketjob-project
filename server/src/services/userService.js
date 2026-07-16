@@ -87,3 +87,38 @@ export const uploadResumeService = async (userId, file) => {
 
   return user;
 };
+
+export const getSeekersService = async (filters) => {
+  const { category, city, search } = filters;
+  const query = { role: "user" };
+
+  if (category) {
+    query.preferredCategories = category;
+  }
+
+  if (city) {
+    query["address.city"] = { $regex: city, $options: "i" };
+  }
+
+  if (search) {
+    query.$or = [
+      { fullName: { $regex: search, $options: "i" } },
+      { skills: { $regex: search, $options: "i" } },
+    ];
+  }
+
+  const seekers = await User.find(query).select("-password").sort({ createdAt: -1 });
+  return seekers;
+};
+
+export const getCompaniesService = async (filters) => {
+  const { search } = filters;
+  const query = { role: "company" };
+
+  if (search) {
+    query.companyName = { $regex: search, $options: "i" };
+  }
+
+  const companies = await User.find(query).select("-password").sort({ createdAt: -1 });
+  return companies;
+};

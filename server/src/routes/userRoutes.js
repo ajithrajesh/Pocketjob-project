@@ -7,6 +7,8 @@ import {
   uploadAadhaarBack,
   uploadLicense,
   uploadResume,
+  getSeekers,
+  getCompanies,
 } from "../controllers/userController.js";
 
 import { protect } from "../middleware/authMiddleware.js";
@@ -52,5 +54,8 @@ router.put(
   upload.single("resume"),
   uploadResume
 );
+
+router.get("/seekers", protect, getSeekers);
+router.get("/companies", protect, getCompanies);
 
 export default router;

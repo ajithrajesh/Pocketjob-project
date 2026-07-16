@@ -6,6 +6,8 @@ import {
   uploadAadhaarBackService,
   uploadLicenseService,
   uploadResumeService,
+  getSeekersService,
+  getCompaniesService,
 } from "../services/userService.js";
 
 export const getProfile = async (req, res) => {
@@ -117,6 +119,44 @@ export const uploadResume = async (req, res) => {
       success: true,
       message: "Resume Uploaded",
       user,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+export const getSeekers = async (req, res) => {
+  try {
+    // Only allow company/provider and admin to search seekers
+    if (req.user.role !== "company" && req.user.role !== "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Not authorized. Seekers search is only for Job Providers.",
+      });
+    }
+
+    const seekers = await getSeekersService(req.query);
+    res.json({
+      success: true,
+      seekers,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+export const getCompanies = async (req, res) => {
+  try {
+    const companies = await getCompaniesService(req.query);
+    res.json({
+      success: true,
+      companies,
     });
   } catch (error) {
     res.status(500).json({

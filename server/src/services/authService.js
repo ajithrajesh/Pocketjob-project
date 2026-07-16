@@ -2,11 +2,7 @@ import bcrypt from "bcryptjs";
 import User from "../models/User.js";
 import generateToken from "../utils/generateToken.js";
 
-/*
-=========================================
-REGISTER SERVICE
-=========================================
-*/
+
 
 export const registerService = async (data) => {
   const {
@@ -15,6 +11,7 @@ export const registerService = async (data) => {
     phone,
     password,
     confirmPassword,
+    role, // 'user', 'company', or 'admin'
 
     gender,
     dob,
@@ -25,56 +22,66 @@ export const registerService = async (data) => {
     pincode,
 
     categories,
+
+    // Company specific
+    companyName,
+    organisationId,
   } = data;
 
-  // Check required fields
   if (!fullName || !email || !phone || !password) {
     throw new Error("Please fill all required fields");
   }
 
-  // Password validation
   if (password !== confirmPassword) {
     throw new Error("Passwords do not match");
   }
 
-  // Existing user
   const existingUser = await User.findOne({ email });
 
   if (existingUser) {
     throw new Error("User already exists");
   }
 
-  // Hash password
   const hashedPassword = await bcrypt.hash(password, 10);
 
-  // Create user
-  const user = await User.create({
+  const userData = {
     fullName,
-
     email,
-
     password: hashedPassword,
-
     phone,
+    role: role || "user",
+  };
 
-    gender,
+  if (role === "company") {
+    userData.companyName = companyName || "";
+    userData.organisationId = organisationId || "";
+    // Set 1-month free trial subscription
+    const startDate = new Date();
+    const endDate = new Date();
+    endDate.setMonth(endDate.getMonth() + 1);
 
-    dateOfBirth: dob,
+    userData.subscription = {
+      plan: "free",
+      status: "active",
+      startDate,
+      endDate,
+    };
+  } else {
+    userData.gender = gender || "";
+    userData.dateOfBirth = dob || null;
+    userData.address = {
+      state: state || "",
+      district: district || "",
+      city: city || "",
+      pincode: pincode || "",
+    };
+    userData.preferredCategories = categories || [];
+  }
 
-    address: {
-      state,
-      district,
-      city,
-      pincode,
-    },
+  const user = await User.create(userData);
 
-    preferredCategories: categories || [],
-  });
-
-  // JWT
   const token = generateToken(user._id);
 
-  // Hide password
   user.password = undefined;
 
   return {
@@ -83,11 +90,7 @@ export const registerService = async (data) => {
   };
 };
 
-/*
-=========================================
-LOGIN SERVICE
-=========================================
-*/
+
 
 export const loginService = async (data) => {
   const { email, password } = data;
@@ -112,12 +115,12 @@ export const loginService = async (data) => {
     throw new Error("Invalid Email or Password");
   }
 
-  // Update last login
+
   user.lastLogin = new Date();
 
   await user.save();
 
-  // Hide password
+  
   user.password = undefined;
 
   const token = generateToken(user._id);

@@ -61,3 +61,63 @@ img{
     margin-top:15px;
 
 }
+
+/* Location & Category Suggestions Autocomplete */
+.location-suggestions-container,
+.category-suggestions-container {
+  position: relative;
+  width: 100%;
+}
+
+.location-suggestions-list,
+.category-suggestions-list {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 1050;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  margin-top: 5px;
+  padding: 0;
+  list-style: none;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.location-suggestion-item,
+.category-suggestion-item {
+  padding: 10px 15px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  text-align: left;
+  color: #334155;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.location-suggestion-item:last-child,
+.category-suggestion-item:last-child {
+  border-bottom: none;
+}
+
+.location-suggestion-item:hover,
+.category-suggestion-item:hover {
+  background-color: #f1f5f9;
+  color: #1e293b;
+}
+
+/* Bootstrap input-group integration */
+.input-group .location-suggestions-container,
+.input-group .category-suggestions-container {
+  flex: 1 1 auto;
+  width: 1%;
+  min-width: 0;
+}
+
+.input-group .location-suggestions-container input,
+.input-group .category-suggestions-container input {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}

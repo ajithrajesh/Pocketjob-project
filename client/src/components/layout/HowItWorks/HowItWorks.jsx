@@ -47,7 +47,7 @@ function HowItWorks() {
         <div className="text-center mb-5">
 
           <h2 className="title">
-            How WorkConnect Works
+            How pocketJob Works
           </h2>
 
           <p className="subtitle">

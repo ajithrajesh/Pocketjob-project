@@ -47,7 +47,7 @@ function WhyChoose() {
         <div className="text-center mb-5">
 
           <h2 className="title">
-            Why Choose WorkConnect?
+            Why Choose pocketJob?
           </h2>
 
           <p className="subtitle">

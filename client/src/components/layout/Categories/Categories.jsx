@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import "./Categories.css";
 import {
   FaUtensils,
@@ -48,6 +49,12 @@ const categories = [
 ];
 
 function Categories() {
+  const navigate = useNavigate();
+
+  const handleCategoryClick = (title) => {
+    navigate(`/jobs?category=${encodeURIComponent(title)}`);
+  };
+
   return (
     <section className="categories section">
 
@@ -74,7 +81,11 @@ function Categories() {
               key={category.id}
             >
 
-              <div className="category-card">
+              <div 
+                className="category-card" 
+                onClick={() => handleCategoryClick(category.title)}
+                style={{ cursor: "pointer" }}
+              >
 
                 <div className="category-icon">
                   {category.icon}

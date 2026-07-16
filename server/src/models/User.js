@@ -39,7 +39,7 @@ const userSchema = new mongoose.Schema(
 
     gender: {
       type: String,
-      enum: ["Male", "Female", "Other"],
+      enum: ["Male", "Female", "Other", ""],
       default: "",
     },
 
@@ -178,6 +178,37 @@ const userSchema = new mongoose.Schema(
     lastLogin: {
       type: Date,
       default: null,
+    },
+
+    companyName: {
+      type: String,
+      default: "",
+    },
+
+    organisationId: {
+      type: String,
+      default: "",
+    },
+
+    subscription: {
+      plan: {
+        type: String,
+        enum: ["free", "basic", "premium"],
+        default: "free",
+      },
+      status: {
+        type: String,
+        enum: ["active", "inactive"],
+        default: "active",
+      },
+      startDate: {
+        type: Date,
+        default: null,
+      },
+      endDate: {
+        type: Date,
+        default: null,
+      },
     },
   },
   {

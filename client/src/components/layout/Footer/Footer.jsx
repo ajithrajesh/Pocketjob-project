@@ -18,7 +18,6 @@ function Footer() {
 
         <div className="row gy-5">
 
-          {/* Company */}
 
           <div className="col-12 col-md-6 col-lg-4">
 
@@ -54,7 +53,7 @@ function Footer() {
 
           </div>
 
-          {/* Quick Links */}
+         
 
           <div className="col-6 col-lg-2">
 

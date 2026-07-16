@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useEffect, useState } from "react";
 import {
   loginUser,
@@ -14,7 +15,7 @@ export const AuthProvider = ({ children }) => {
 
   const [loading, setLoading] = useState(true);
 
-  // Register
+ 
   const register = async (formData) => {
     const data = await registerUser(formData);
 
@@ -26,7 +27,7 @@ export const AuthProvider = ({ children }) => {
     return data;
   };
 
-  // Login
+ 
   const login = async (formData) => {
     const data = await loginUser(formData);
 
@@ -38,7 +39,7 @@ export const AuthProvider = ({ children }) => {
     return data;
   };
 
-  // Logout
+  
   const logout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
@@ -46,7 +47,7 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
-  // Check login after refresh
+  
   useEffect(() => {
     const loadUser = async () => {
       try {

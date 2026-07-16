@@ -56,3 +56,14 @@ export const adminOnly = (req, res, next) => {
 
   next();
 };
+
+export const companyOnly = (req, res, next) => {
+  if (req.user.role !== "company" && req.user.role !== "admin") {
+    return res.status(403).json({
+      success: false,
+      message: "Job Provider access only.",
+    });
+  }
+
+  next();
+};
