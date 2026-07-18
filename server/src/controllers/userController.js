@@ -130,7 +130,7 @@ export const uploadResume = async (req, res) => {
 
 export const getSeekers = async (req, res) => {
   try {
-    // Only allow company/provider and admin to search seekers
+    
     if (req.user.role !== "company" && req.user.role !== "admin") {
       return res.status(403).json({
         success: false,

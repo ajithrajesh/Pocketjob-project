@@ -27,7 +27,7 @@ function LocationAutocomplete({ value, onChange, placeholder, className, style }
   const [showSuggestions, setShowSuggestions] = useState(false);
   const containerRef = useRef(null);
 
-  // Filter locations as the user types
+  
   useEffect(() => {
     if (value && value.trim()) {
       const query = value.toLowerCase().trim();
@@ -40,7 +40,7 @@ function LocationAutocomplete({ value, onChange, placeholder, className, style }
     }
   }, [value]);
 
-  // Handle click outside to close suggestions
+  
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (containerRef.current && !containerRef.current.contains(event.target)) {

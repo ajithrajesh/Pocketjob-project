@@ -66,7 +66,7 @@ const jobSchema = new mongoose.Schema(
   }
 );
 
-// Index for text-based location and title search
+
 jobSchema.index({
   title: "text",
   "location.city": "text",

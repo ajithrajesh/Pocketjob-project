@@ -4,12 +4,12 @@ import Job from "../models/Job.js";
 
 export const seedJobs = async () => {
   try {
-    console.log("Clearing existing jobs for fresh seeding...");
+    
     await Job.deleteMany({});
 
-    console.log("Seeding mock company and jobs...");
+   
 
-    // 1. Find or create a company user
+    
     let companyUser = await User.findOne({ role: "company" });
     if (!companyUser) {
       const hashedPassword = await bcrypt.hash("password123", 10);
@@ -35,7 +35,6 @@ export const seedJobs = async () => {
       console.log("Seeded mock company user: provider@test.com / password123");
     }
 
-    // 2. Insert seed jobs for all 7 categories
     const mockJobs = [
       // 1. Catering
       {
@@ -62,7 +61,7 @@ export const seedJobs = async () => {
         requirements: ["Basic kitchen knowledge", "Food safety awareness"],
         location: { city: "Bangalore", district: "Bengaluru", state: "Karnataka", pincode: "560001" },
       },
-      // 2. Warehouse
+     
       {
         title: "Warehouse Assistant (Sorting)",
         company: companyUser._id,
@@ -87,7 +86,7 @@ export const seedJobs = async () => {
         requirements: ["Basic reading skills", "Physical fitness"],
         location: { city: "Bangalore", district: "Bengaluru", state: "Karnataka", pincode: "560068" },
       },
-      // 3. Driver
+      
       {
         title: "Weekend Driver for Catering Van",
         company: companyUser._id,
@@ -112,7 +111,7 @@ export const seedJobs = async () => {
         requirements: ["Valid driving license", "Clean background check", "Knows Malayalam/English"],
         location: { city: "Thrissur", district: "Thrissur", state: "Kerala", pincode: "680001" },
       },
-      // 4. Delivery
+     
       {
         title: "Sunday Delivery Executive",
         company: companyUser._id,
@@ -137,7 +136,7 @@ export const seedJobs = async () => {
         requirements: ["Smartphone", "Two-wheeler", "Punctuality"],
         location: { city: "Bangalore", district: "Bengaluru", state: "Karnataka", pincode: "560025" },
       },
-      // 5. Housekeeping
+      
       {
         title: "Resort Housekeeper (Part-time)",
         company: companyUser._id,
@@ -215,7 +214,7 @@ export const seedJobs = async () => {
     ];
 
     await Job.insertMany(mockJobs);
-    console.log("Mock jobs successfully seeded!");
+   
   } catch (error) {
     console.error("Error seeding database:", error.message);
   }

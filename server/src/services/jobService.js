@@ -39,7 +39,7 @@ export const searchJobsService = async (filters) => {
 
   if (filters.location) {
     const loc = filters.location.trim();
-    // Search location across city, district, state, or pincode
+    
     query.$or = [
       { "location.city": { $regex: loc, $options: "i" } },
       { "location.district": { $regex: loc, $options: "i" } },
@@ -62,11 +62,11 @@ export const getRecommendedJobsService = async (userId) => {
   const categories = user.preferredCategories || [];
 
   if (categories.length === 0) {
-    // Return newest jobs if no preferred categories selected
+   
     return await Job.find({}).sort({ createdAt: -1 }).limit(10);
   }
 
-  // Find jobs that match any of the user's preferred categories
+ 
   const jobs = await Job.find({
     category: { $in: categories },
   }).sort({ createdAt: -1 });
@@ -79,9 +79,7 @@ export const getMyJobsService = async (userId) => {
   return jobs;
 };
 
-// ----------------------------------------------------
-// EXTENDED JOB & APPLICATION SERVICES
-// ----------------------------------------------------
+
 import Application from "../models/Application.js";
 
 export const updateJobService = async (jobId, userId, updateData) => {
@@ -125,7 +123,7 @@ export const deleteJobService = async (jobId, userId) => {
     }
   }
 
-  // Remove associated applications
+
   await Application.deleteMany({ job: jobId });
   await Job.findByIdAndDelete(jobId);
   return { message: "Job deleted successfully" };
@@ -142,7 +140,7 @@ export const applyJobService = async (jobId, seekerId) => {
     throw new Error("Only job seekers can apply for jobs");
   }
 
-  // Check if already applied
+
   const existingApp = await Application.findOne({ job: jobId, seeker: seekerId });
   if (existingApp) {
     throw new Error("You have already applied to this job");

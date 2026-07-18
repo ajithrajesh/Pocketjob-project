@@ -23,7 +23,6 @@ const applicationSchema = new mongoose.Schema(
   }
 );
 
-// Prevent multiple applications from same seeker to same job
 applicationSchema.index({ job: 1, seeker: 1 }, { unique: true });
 
 const Application = mongoose.model("Application", applicationSchema);

@@ -11,7 +11,7 @@ export const registerService = async (data) => {
     phone,
     password,
     confirmPassword,
-    role, // 'user', 'company', or 'admin'
+    role, 
 
     gender,
     dob,
@@ -23,7 +23,7 @@ export const registerService = async (data) => {
 
     categories,
 
-    // Company specific
+    
     companyName,
     organisationId,
   } = data;
@@ -55,7 +55,7 @@ export const registerService = async (data) => {
   if (role === "company") {
     userData.companyName = companyName || "";
     userData.organisationId = organisationId || "";
-    // Set 1-month free trial subscription
+    
     const startDate = new Date();
     const endDate = new Date();
     endDate.setMonth(endDate.getMonth() + 1);

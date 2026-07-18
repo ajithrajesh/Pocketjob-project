@@ -289,55 +289,16 @@ function ProviderDashboard() {
 
   return (
     <div className="card shadow-sm border-0 p-4">
-      {/* Tab Navigation */}
-      <ul className="nav nav-tabs mb-4">
-        <li className="nav-item">
-          <button 
-            className={`nav-link fw-semibold ${activeTab === "overview" ? "active" : ""}`}
-            onClick={() => setActiveTab("overview")}
-          >
-            🏢 Organisation Overview
-          </button>
-        </li>
-        <li className="nav-item">
-          <button 
-            className={`nav-link fw-semibold ${activeTab === "post" ? "active" : ""}`}
-            onClick={() => setActiveTab("post")}
-          >
-            ➕ Post a Job
-          </button>
-        </li>
-        <li className="nav-item">
-          <button 
-            className={`nav-link fw-semibold ${activeTab === "my-jobs" ? "active" : ""}`}
-            onClick={() => setActiveTab("my-jobs")}
-          >
-            📋 My Posted Jobs
-          </button>
-        </li>
-        <li className="nav-item">
-          <button 
-            className={`nav-link fw-semibold ${activeTab === "seekers" ? "active" : ""}`}
-            onClick={() => setActiveTab("seekers")}
-          >
-            🔍 Search Seekers
-          </button>
-        </li>
-        {activeTab === "edit" && (
-          <li className="nav-item">
-            <button className="nav-link fw-semibold active">
-              ✏️ Edit Job
-            </button>
-          </li>
-        )}
-        {activeTab === "applicants" && (
-          <li className="nav-item">
-            <button className="nav-link fw-semibold active">
-              👥 Applicants
-            </button>
-          </li>
-        )}
-      </ul>
+      {activeTab === "edit" && (
+        <h5 className="fw-bold mb-4 text-warning-emphasis d-flex align-items-center">
+          <FaEdit className="me-2" /> Editing Job
+        </h5>
+      )}
+      {activeTab === "applicants" && (
+        <h5 className="fw-bold mb-4 text-dark d-flex align-items-center">
+          <FaUsers className="me-2" /> Applicants
+        </h5>
+      )}
 
       {/* Tab Content: Overview */}
       {activeTab === "overview" && (
