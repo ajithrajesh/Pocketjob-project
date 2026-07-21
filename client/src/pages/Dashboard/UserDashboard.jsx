@@ -1,10 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { io } from "socket.io-client";
 import { useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useAuth } from "../../context/AuthContext";
 import { getProfile, updateProfile, uploadAadhaarFront, uploadAadhaarBack, uploadLicense, uploadResume } from "../../services/userService";
 import { searchJobs, getRecommendedJobs, applyToJob, getMyAppliedJobs } from "../../services/jobService";
-import { FaUpload, FaSearch, FaMapMarkerAlt, FaFileAlt, FaCheckCircle, FaUser, FaSlidersH } from "react-icons/fa";
+import { getInvitations, updateInvitationStatus } from "../../services/invitationService";
+import { FaUpload, FaSearch, FaMapMarkerAlt, FaFileAlt, FaCheckCircle, FaUser, FaSlidersH, FaEnvelope, FaCheck, FaTimes } from "react-icons/fa";
 import LocationAutocomplete from "../../components/common/LocationAutocomplete";
 
 function UserDashboard() {
@@ -16,6 +18,30 @@ function UserDashboard() {
   const setActiveTab = (tabName) => {
     setUrlParams({ tab: tabName });
   };
+
+  const activeTabRef = useRef(activeTab);
+  useEffect(() => {
+    activeTabRef.current = activeTab;
+  }, [activeTab]);
+
+  useEffect(() => {
+    if (authUser && authUser.role === "user") {
+      const socket = io("http://localhost:5000");
+
+      socket.emit("join", authUser._id);
+
+      socket.on("newInvitation", (data) => {
+        toast.info(data.message || "You received a new job invitation!");
+        if (activeTabRef.current === "invitations") {
+          fetchInvitations();
+        }
+      });
+
+      return () => {
+        socket.disconnect();
+      };
+    }
+  }, [authUser]);
   
   // Job Search State
   const [searchParams, setSearchParams] = useState({ category: "", location: "" });
@@ -29,6 +55,10 @@ function UserDashboard() {
   // Applied Jobs State
   const [appliedJobsStatus, setAppliedJobsStatus] = useState({});
   const [appliedJobs, setAppliedJobs] = useState([]);
+
+  // Invitations State
+  const [invitations, setInvitations] = useState([]);
+  const [loadingInvitations, setLoadingInvitations] = useState(false);
 
   // Profile Edit State
   const [isEditing, setIsEditing] = useState(false);
@@ -149,6 +179,37 @@ function UserDashboard() {
   useEffect(() => {
     if (activeTab === "recommended") {
       fetchRecommendations();
+    }
+  }, [activeTab]);
+
+  const fetchInvitations = async () => {
+    try {
+      setLoadingInvitations(true);
+      const data = await getInvitations();
+      setInvitations(data.invitations || []);
+    } catch (error) {
+      toast.error("Failed to load job invitations");
+    } finally {
+      setLoadingInvitations(false);
+    }
+  };
+
+  const handleInvitationStatus = async (invitationId, status) => {
+    try {
+      await updateInvitationStatus(invitationId, status);
+      toast.success(`Invitation ${status} successfully!`);
+      fetchInvitations();
+      if (status === "accepted") {
+        fetchAppliedJobs();
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to update invitation status");
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === "invitations") {
+      fetchInvitations();
     }
   }, [activeTab]);
 
@@ -696,6 +757,94 @@ function UserDashboard() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Tab Content: Job Invitations */}
+      {activeTab === "invitations" && (
+        <div>
+          <h4 className="fw-bold mb-4 text-dark d-flex align-items-center">
+            <FaEnvelope className="text-primary me-2" /> Job Invitations
+          </h4>
+          <p className="text-muted small mb-4">
+            Below are invitations sent directly to you by Job Providers. You can accept or reject them.
+          </p>
+
+          {loadingInvitations ? (
+            <div className="text-center py-5">
+              <div className="spinner-border text-primary" role="status"></div>
+            </div>
+          ) : invitations.length === 0 ? (
+            <div className="text-center py-5 text-muted bg-white border rounded">
+              You haven't received any job invitations yet.
+            </div>
+          ) : (
+            <div className="row g-3">
+              {invitations.map((inv) => (
+                <div className="col-md-6" key={inv._id}>
+                  <div className="card h-100 shadow-sm border border-light">
+                    <div className="card-body d-flex flex-column justify-content-between">
+                      <div>
+                        <div className="d-flex justify-content-between align-items-start mb-2">
+                          <h5 className="card-title fw-bold text-dark mb-0">{inv.job?.title || "Deleted Job"}</h5>
+                          <span className="badge bg-secondary">{inv.job?.category}</span>
+                        </div>
+                        <h6 className="text-primary mb-3">🏢 {inv.company?.companyName || inv.company?.fullName || "N/A"}</h6>
+                        <p className="card-text text-muted small mt-2">{inv.job?.description}</p>
+                        
+                        <div className="d-flex flex-wrap gap-2 mb-3 mt-3">
+                          <span className="text-muted small d-flex align-items-center">
+                            <FaMapMarkerAlt className="me-1 text-danger" /> 
+                            {inv.job?.location?.city ? `${inv.job.location.city}, ${inv.job.location.state}` : "Remote"}
+                          </span>
+                          <span className="text-success small fw-bold me-2">💰 {inv.job?.salary || "Not Specified"}</span>
+                          {inv.job?.date && (
+                            <span className="text-muted small d-flex align-items-center">
+                              📅 {inv.job.date}
+                            </span>
+                          )}
+                        </div>
+
+                        {inv.job?.requirements && inv.job.requirements.length > 0 && (
+                          <div className="small text-muted mb-2">
+                            <strong>Requirements:</strong> {inv.job.requirements.join(", ")}
+                          </div>
+                        )}
+
+                        <div className="border-top pt-2 mt-2 small text-muted">
+                          <strong>Contact Info:</strong>
+                          <div>Email: {inv.company?.email}</div>
+                          <div>Phone: {inv.company?.phone}</div>
+                        </div>
+                      </div>
+
+                      <div className="border-top pt-3 mt-3 d-flex justify-content-between align-items-center">
+                        <div>
+                          <span className="text-muted small">Received: {new Date(inv.createdAt).toLocaleDateString()}</span>
+                        </div>
+                        <div>
+                          {inv.status === "pending" ? (
+                            <div className="d-flex gap-2">
+                              <button className="btn btn-sm btn-success d-flex align-items-center" onClick={() => handleInvitationStatus(inv._id, "accepted")}>
+                                <FaCheck className="me-1" /> Accept
+                              </button>
+                              <button className="btn btn-sm btn-danger d-flex align-items-center" onClick={() => handleInvitationStatus(inv._id, "rejected")}>
+                                <FaTimes className="me-1" /> Reject
+                              </button>
+                            </div>
+                          ) : (
+                            <span className={`badge py-2 px-3 text-capitalize ${inv.status === "accepted" ? "bg-success" : "bg-danger"}`}>
+                              {inv.status}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>

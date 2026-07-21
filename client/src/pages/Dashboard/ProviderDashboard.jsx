@@ -4,6 +4,7 @@ import { toast } from "react-toastify";
 import { useAuth } from "../../context/AuthContext";
 import { postJob, getMyJobs, updateJob, deleteJob, getJobApplications, updateApplicationStatus } from "../../services/jobService";
 import { getJobSeekers } from "../../services/userService";
+import { getInvitations, sendInvitation } from "../../services/invitationService";
 import { 
   FaBuilding, FaPlusCircle, FaBriefcase, FaListAlt, 
   FaCalendarCheck, FaCreditCard, FaMapMarkerAlt, 
@@ -65,8 +66,18 @@ function ProviderDashboard() {
   const [seekerFilters, setSeekerFilters] = useState({
     category: "",
     city: "",
-    search: ""
+    search: "",
+    minExperience: "",
+    maxExperience: "",
+    sort: "newest"
   });
+
+  // Invitation Modal State
+  const [inviteModalOpen, setInviteModalOpen] = useState(false);
+  const [selectedSeeker, setSelectedSeeker] = useState(null);
+  const [selectedJobIdForInvite, setSelectedJobIdForInvite] = useState("");
+  const [inviting, setInviting] = useState(false);
+  const [sentInvitations, setSentInvitations] = useState([]);
 
   // Applicants View State
   const [selectedJob, setSelectedJob] = useState(null);
@@ -121,8 +132,56 @@ function ProviderDashboard() {
     }
   };
 
+  const fetchSentInvitations = async () => {
+    try {
+      const data = await getInvitations();
+      setSentInvitations(data.invitations || []);
+    } catch (error) {
+      console.error("Failed to load sent invitations", error);
+    }
+  };
+
+  const handleOpenInviteModal = (seeker) => {
+    if (myJobs.length === 0) {
+      toast.warning("You must post a job before you can invite seekers!");
+      setActiveTab("post");
+      return;
+    }
+    setSelectedSeeker(seeker);
+    const alreadyInvitedJobIds = sentInvitations
+      .filter((inv) => (inv.seeker?._id || inv.seeker) === seeker._id)
+      .map((inv) => inv.job?._id || inv.job);
+
+    const availableJobs = myJobs.filter((job) => !alreadyInvitedJobIds.includes(job._id));
+    if (availableJobs.length > 0) {
+      setSelectedJobIdForInvite(availableJobs[0]._id);
+    } else {
+      setSelectedJobIdForInvite("");
+    }
+    setInviteModalOpen(true);
+  };
+
+  const handleSendInvitation = async (e) => {
+    e.preventDefault();
+    if (!selectedJobIdForInvite) {
+      toast.error("Please select a job opening to invite the seeker to.");
+      return;
+    }
+    try {
+      setInviting(true);
+      await sendInvitation(selectedJobIdForInvite, selectedSeeker._id);
+      toast.success(`Invitation sent successfully to ${selectedSeeker.fullName}!`);
+      setInviteModalOpen(false);
+      fetchSentInvitations();
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to send invitation");
+    } finally {
+      setInviting(false);
+    }
+  };
+
   useEffect(() => {
-    if (activeTab === "my-jobs") {
+    if (activeTab === "my-jobs" || activeTab === "seekers") {
       fetchMyJobs();
     }
   }, [activeTab]);
@@ -130,6 +189,7 @@ function ProviderDashboard() {
   useEffect(() => {
     if (activeTab === "seekers") {
       fetchSeekers();
+      fetchSentInvitations();
     }
   }, [activeTab, seekerFilters.category]);
 
@@ -793,8 +853,9 @@ function ProviderDashboard() {
           <h4 className="fw-bold mb-3 text-dark">Find Job Seekers</h4>
           <p className="text-muted small mb-4">Browse and contact workers looking for part-time shift jobs.</p>
 
-          <form onSubmit={handleSeekerSearch} className="row g-2 mb-4 bg-light p-3 rounded">
+          <form onSubmit={handleSeekerSearch} className="row g-3 mb-4 bg-light p-3 rounded">
             <div className="col-md-4">
+              <label className="form-label text-muted small fw-semibold">Category</label>
               <select 
                 className="form-select"
                 value={seekerFilters.category}
@@ -806,7 +867,8 @@ function ProviderDashboard() {
                 ))}
               </select>
             </div>
-            <div className="col-md-3">
+            <div className="col-md-4">
+              <label className="form-label text-muted small fw-semibold">Location / City</label>
               <LocationAutocomplete 
                 className="form-control" 
                 placeholder="City (e.g. Kochi)" 
@@ -814,7 +876,8 @@ function ProviderDashboard() {
                 onChange={(val) => setSeekerFilters({ ...seekerFilters, city: val })}
               />
             </div>
-            <div className="col-md-3">
+            <div className="col-md-4">
+              <label className="form-label text-muted small fw-semibold">Search Keywords</label>
               <input 
                 type="text" 
                 className="form-control" 
@@ -823,8 +886,45 @@ function ProviderDashboard() {
                 onChange={(e) => setSeekerFilters({ ...seekerFilters, search: e.target.value })}
               />
             </div>
-            <div className="col-md-2">
-              <button type="submit" className="btn btn-primary w-100">
+            <div className="col-md-3">
+              <label className="form-label text-muted small fw-semibold">Min Experience (Years)</label>
+              <input 
+                type="number" 
+                className="form-control" 
+                placeholder="e.g. 0" 
+                min="0"
+                value={seekerFilters.minExperience}
+                onChange={(e) => setSeekerFilters({ ...seekerFilters, minExperience: e.target.value })}
+              />
+            </div>
+            <div className="col-md-3">
+              <label className="form-label text-muted small fw-semibold">Max Experience (Years)</label>
+              <input 
+                type="number" 
+                className="form-control" 
+                placeholder="e.g. 10" 
+                min="0"
+                value={seekerFilters.maxExperience}
+                onChange={(e) => setSeekerFilters({ ...seekerFilters, maxExperience: e.target.value })}
+              />
+            </div>
+            <div className="col-md-4">
+              <label className="form-label text-muted small fw-semibold">Sort By</label>
+              <select 
+                className="form-select"
+                value={seekerFilters.sort}
+                onChange={(e) => setSeekerFilters({ ...seekerFilters, sort: e.target.value })}
+              >
+                <option value="newest">Newest Registration</option>
+                <option value="oldest">Oldest Registration</option>
+                <option value="experience-desc">Experience (Highest First)</option>
+                <option value="experience-asc">Experience (Lowest First)</option>
+                <option value="name-asc">Name (A - Z)</option>
+                <option value="name-desc">Name (Z - A)</option>
+              </select>
+            </div>
+            <div className="col-md-2 d-flex align-items-end">
+              <button type="submit" className="btn btn-primary w-100 py-2">
                 <FaSearch className="me-1" /> Filter
               </button>
             </div>
@@ -905,16 +1005,114 @@ function ProviderDashboard() {
                             </a>
                           )}
                           {!seeker.aadhaarFront?.url && !seeker.drivingLicense?.url && !seeker.resume?.url && (
-                            <span className="text-muted small">No verified documents</span>
-                          )}
+                             <span className="text-muted small">No verified documents</span>
+                           )}
                         </div>
                       </div>
+
+                      {/* Invitations Section */}
+                      <div className="mt-3 border-top pt-3">
+                        {(() => {
+                          const seekerInvites = sentInvitations.filter(
+                            (inv) => (inv.seeker?._id || inv.seeker) === seeker._id
+                          );
+                          return (
+                            <>
+                              {seekerInvites.length > 0 && (
+                                <div className="mb-2">
+                                  <span className="small text-muted d-block fw-semibold mb-1">Sent Invitations:</span>
+                                  <div className="d-flex flex-column gap-1" style={{ maxHeight: "80px", overflowY: "auto" }}>
+                                    {seekerInvites.map((inv) => (
+                                      <div key={inv._id} className="d-flex justify-content-between align-items-center bg-light px-2 py-1 rounded border small">
+                                        <span className="text-truncate fw-semibold text-dark" style={{ maxWidth: "120px" }} title={inv.job?.title}>
+                                          {inv.job?.title || "Deleted Job"}
+                                        </span>
+                                        <span className={`badge text-capitalize ${inv.status === "accepted" ? "bg-success" : inv.status === "rejected" ? "bg-danger" : "bg-warning text-dark"}`} style={{ fontSize: "0.65rem" }}>
+                                          {inv.status}
+                                        </span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                              <button 
+                                className="btn btn-sm btn-primary w-100 mt-1 d-flex align-items-center justify-content-center"
+                                onClick={() => handleOpenInviteModal(seeker)}
+                              >
+                                <FaPlusCircle className="me-1" /> Invite to Job
+                              </button>
+                            </>
+                          );
+                        })()}
+                      </div>
+
                     </div>
                   </div>
                 </div>
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Invite Seeker Modal */}
+      {inviteModalOpen && selectedSeeker && (
+        <div className="modal show d-block" tabIndex="-1" role="dialog" style={{ backgroundColor: "rgba(0,0,0,0.5)", zIndex: 1050 }}>
+          <div className="modal-dialog modal-dialog-centered" role="document">
+            <div className="modal-content border-0 shadow-lg">
+              <div className="modal-header bg-primary text-white">
+                <h5 className="modal-title fw-bold">Invite {selectedSeeker.fullName} to a Job</h5>
+                <button type="button" className="btn-close btn-close-white" onClick={() => setInviteModalOpen(false)} aria-label="Close"></button>
+              </div>
+              <form onSubmit={handleSendInvitation}>
+                <div className="modal-body">
+                  <p className="text-muted small">
+                    Select one of your active job listings to send an invitation to this worker.
+                  </p>
+                  
+                  <div className="mb-3">
+                    <label className="form-label fw-semibold text-dark">Job Listing</label>
+                    <select 
+                      className="form-select"
+                      value={selectedJobIdForInvite}
+                      onChange={(e) => setSelectedJobIdForInvite(e.target.value)}
+                      required
+                    >
+                      <option value="">-- Choose Job --</option>
+                      {myJobs.map((job) => {
+                        const isAlreadyInvited = sentInvitations.some(
+                          (inv) => (inv.job?._id || inv.job) === job._id && (inv.seeker?._id || inv.seeker) === selectedSeeker._id
+                        );
+                        return (
+                          <option key={job._id} value={job._id} disabled={isAlreadyInvited}>
+                            {job.title} {isAlreadyInvited ? "(Already Invited)" : ""}
+                          </option>
+                        );
+                      })}
+                    </select>
+                  </div>
+                  
+                  {myJobs.every((job) => sentInvitations.some((inv) => (inv.job?._id || inv.job) === job._id && (inv.seeker?._id || inv.seeker) === selectedSeeker._id)) && (
+                    <div className="alert alert-warning py-2 small mb-0">
+                      You have already invited this seeker to all your active jobs.
+                    </div>
+                  )}
+                </div>
+                <div className="modal-footer bg-light">
+                  <button type="button" className="btn btn-outline-secondary" onClick={() => setInviteModalOpen(false)}>
+                    Cancel
+                  </button>
+                  <button 
+                    type="submit" 
+                    className="btn btn-primary fw-bold" 
+                    disabled={inviting || !selectedJobIdForInvite}
+                  >
+                    {inviting ? "Sending..." : "Send Invitation"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
         </div>
       )}
     </div>

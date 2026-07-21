@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { Navigate, Link, Outlet, useNavigate, useSearchParams } from "react-router-dom";
-import { FaUserCircle, FaBriefcase, FaClipboardList, FaSignOutAlt, FaSearch, FaUser, FaFileAlt, FaSlidersH, FaHome, FaTachometerAlt, FaBars, FaTimes, FaBuilding, FaPlusCircle, FaListAlt, FaUsers } from "react-icons/fa";
+import { FaUserCircle, FaBriefcase, FaClipboardList, FaSignOutAlt, FaSearch, FaUser, FaFileAlt, FaSlidersH, FaHome, FaTachometerAlt, FaBars, FaTimes, FaBuilding, FaPlusCircle, FaListAlt, FaUsers, FaEnvelope } from "react-icons/fa";
 
 function DashboardLayout() {
   const { user, isAuthenticated, loading, logout } = useAuth();
@@ -108,6 +108,15 @@ function DashboardLayout() {
                       className={`nav-link d-flex align-items-start sidebar-nav-link ${currentTab === "applications" ? "active" : ""}`}
                     >
                       <FaClipboardList className="me-2" /> My Applications
+                    </Link>
+                  </li>
+                  <li className="nav-item">
+                    <Link
+                      to="/dashboard?tab=invitations"
+                      onClick={() => setSidebarOpen(false)}
+                      className={`nav-link d-flex align-items-start sidebar-nav-link ${currentTab === "invitations" ? "active" : ""}`}
+                    >
+                      <FaEnvelope className="me-2" /> Job Invitations
                     </Link>
                   </li>
                   <li className="nav-item">

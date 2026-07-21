@@ -3,6 +3,8 @@ import app from "./app.js";
 import connectDB from "./config/db.js";
 import { seedJobs } from "./utils/seeder.js";
 import mongoose from "mongoose";
+import http from "http";
+import { Server } from "socket.io";
 
 dotenv.config();
 
@@ -18,7 +20,38 @@ const startServer = async () => {
       console.warn("WARNING: Skipping job database seeding because the database is offline.");
     }
 
-    app.listen(PORT, () => {
+    const server = http.createServer(app);
+    const io = new Server(server, {
+      cors: {
+        origin: "*",
+        methods: ["GET", "POST", "PUT", "DELETE"],
+      },
+    });
+
+    const userSockets = new Map();
+
+    io.on("connection", (socket) => {
+      socket.on("join", (userId) => {
+        if (userId) {
+          userSockets.set(userId.toString(), socket.id);
+        }
+      });
+
+      socket.on("disconnect", () => {
+        for (const [userId, socketId] of userSockets.entries()) {
+          if (socketId === socket.id) {
+            userSockets.delete(userId);
+            break;
+          }
+        }
+      });
+    });
+
+    // Store socket instances in the express app
+    app.set("io", io);
+    app.set("userSockets", userSockets);
+
+    server.listen(PORT, () => {
       console.log(`Server is running on http://localhost:${PORT}`);
     });
   } catch (error) {

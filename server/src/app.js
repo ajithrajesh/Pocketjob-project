@@ -7,6 +7,7 @@ import cookieParser from "cookie-parser";
 import authRoutes from "./routes/authRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import jobRoutes from "./routes/jobRoutes.js";
+import invitationRoutes from "./routes/invitationRoutes.js";
 
 import notFoundMiddleware from "./middleware/notFoundMiddleware.js";
 import errorMiddleware from "./middleware/errorMiddleware.js";
@@ -34,7 +35,7 @@ app.get("/", (req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/jobs", jobRoutes);
-
+app.use("/api/invitations", invitationRoutes);
 
 
 app.use(notFoundMiddleware);

@@ -89,7 +89,7 @@ export const uploadResumeService = async (userId, file) => {
 };
 
 export const getSeekersService = async (filters) => {
-  const { category, city, search } = filters;
+  const { category, city, search, minExperience, maxExperience, sort } = filters;
   const query = { role: "user" };
 
   if (category) {
@@ -107,7 +107,31 @@ export const getSeekersService = async (filters) => {
     ];
   }
 
-  const seekers = await User.find(query).select("-password").sort({ createdAt: -1 });
+  if (minExperience !== undefined && minExperience !== "") {
+    query.experience = { ...query.experience, $gte: Number(minExperience) };
+  }
+  if (maxExperience !== undefined && maxExperience !== "") {
+    query.experience = { ...query.experience, $lte: Number(maxExperience) };
+  }
+
+  let sortObj = { createdAt: -1 }; // default: newest first
+  if (sort) {
+    if (sort === "experience-desc") {
+      sortObj = { experience: -1 };
+    } else if (sort === "experience-asc") {
+      sortObj = { experience: 1 };
+    } else if (sort === "newest") {
+      sortObj = { createdAt: -1 };
+    } else if (sort === "oldest") {
+      sortObj = { createdAt: 1 };
+    } else if (sort === "name-asc") {
+      sortObj = { fullName: 1 };
+    } else if (sort === "name-desc") {
+      sortObj = { fullName: -1 };
+    }
+  }
+
+  const seekers = await User.find(query).select("-password").sort(sortObj);
   return seekers;
 };
 
