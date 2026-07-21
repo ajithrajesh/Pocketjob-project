@@ -70,6 +70,9 @@ function UserDashboard() {
     district: "",
     city: "",
     pincode: "",
+    presetEmail: "",
+    enableEmailNotifications: true,
+    presetMailTemplate: "You have a new activity update on your pocketJob account.",
   });
   const [updatingProfile, setUpdatingProfile] = useState(false);
 
@@ -104,6 +107,9 @@ function UserDashboard() {
         district: data.user.address?.district || "",
         city: data.user.address?.city || "",
         pincode: data.user.address?.pincode || "",
+        presetEmail: data.user.emailNotificationSettings?.presetEmail || "",
+        enableEmailNotifications: data.user.emailNotificationSettings?.enableEmailNotifications !== false,
+        presetMailTemplate: data.user.emailNotificationSettings?.presetMailTemplate || "You have a new activity update on your pocketJob account.",
       });
     } catch (error) {
       toast.error("Failed to load user profile");
@@ -221,7 +227,8 @@ function UserDashboard() {
 
   // Handle Profile Update Form
   const handleProfileChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const value = e.target.type === "checkbox" ? e.target.checked : e.target.value;
+    setFormData({ ...formData, [e.target.name]: value });
   };
 
   const handleProfileUpdate = async (e) => {
@@ -237,12 +244,17 @@ function UserDashboard() {
           district: formData.district,
           city: formData.city,
           pincode: formData.pincode,
-        }
+        },
+        emailNotificationSettings: {
+          presetEmail: formData.presetEmail,
+          enableEmailNotifications: formData.enableEmailNotifications,
+          presetMailTemplate: formData.presetMailTemplate,
+        },
       };
       const response = await updateProfile(updateData);
       setUserProfile(response.user);
       setIsEditing(false);
-      toast.success("Profile updated successfully!");
+      toast.success("Profile & Preset Email settings updated successfully!");
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to update profile");
     } finally {
@@ -555,6 +567,56 @@ function UserDashboard() {
                       onChange={handleProfileChange}
                       disabled={!isEditing}
                     />
+                  </div>
+                </div>
+
+                <div className="mt-4 pt-3 border-top">
+                  <h6 className="fw-bold text-primary mb-3">
+                    <FaEnvelope className="me-2" /> Preset Gmail & Email Notification Settings
+                  </h6>
+
+                  <div className="form-check form-switch mb-3">
+                    <input
+                      className="form-check-input"
+                      type="checkbox"
+                      id="enableEmailNotifications"
+                      name="enableEmailNotifications"
+                      checked={formData.enableEmailNotifications}
+                      onChange={handleProfileChange}
+                      disabled={!isEditing}
+                    />
+                    <label className="form-check-label fw-semibold text-dark" htmlFor="enableEmailNotifications">
+                      Enable Email Notifications to Inbox
+                    </label>
+                    <div className="form-text">Receive preset emails directly in your inbox for job invitations, request accepts/rejects, and new job updates.</div>
+                  </div>
+
+                  <div className="mb-3">
+                    <label className="form-label text-muted small">Preset Gmail / Destination Email Address</label>
+                    <input
+                      type="email"
+                      className="form-control"
+                      name="presetEmail"
+                      placeholder={`Default: ${userProfile.email}`}
+                      value={formData.presetEmail}
+                      onChange={handleProfileChange}
+                      disabled={!isEditing}
+                    />
+                    <div className="form-text">Leave blank to use your account email ({userProfile.email}) or enter a custom Gmail inbox.</div>
+                  </div>
+
+                  <div className="mb-3">
+                    <label className="form-label text-muted small">Preset Email Message / Custom Template Note</label>
+                    <textarea
+                      className="form-control"
+                      name="presetMailTemplate"
+                      rows="2"
+                      placeholder="Add a custom note to include in your preset notification emails..."
+                      value={formData.presetMailTemplate}
+                      onChange={handleProfileChange}
+                      disabled={!isEditing}
+                    />
+                    <div className="form-text">This preset note will be included inside outgoing notification emails sent to your inbox.</div>
                   </div>
                 </div>
 

@@ -3,7 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useAuth } from "../../context/AuthContext";
 import { postJob, getMyJobs, updateJob, deleteJob, getJobApplications, updateApplicationStatus } from "../../services/jobService";
-import { getJobSeekers } from "../../services/userService";
+import { getJobSeekers, updateProfile } from "../../services/userService";
 import { getInvitations, sendInvitation } from "../../services/invitationService";
 import { 
   FaBuilding, FaPlusCircle, FaBriefcase, FaListAlt, 
@@ -18,6 +18,42 @@ function ProviderDashboard() {
   const { user } = useAuth();
   const [urlParams, setUrlParams] = useSearchParams();
   const activeTab = urlParams.get("tab") || "overview";
+
+  const [emailSettings, setEmailSettings] = useState({
+    presetEmail: user?.emailNotificationSettings?.presetEmail || "",
+    enableEmailNotifications: user?.emailNotificationSettings?.enableEmailNotifications !== false,
+    presetMailTemplate: user?.emailNotificationSettings?.presetMailTemplate || "You have a new activity update on your pocketJob provider account.",
+  });
+  const [savingSettings, setSavingSettings] = useState(false);
+
+  useEffect(() => {
+    if (user?.emailNotificationSettings) {
+      setEmailSettings({
+        presetEmail: user.emailNotificationSettings.presetEmail || "",
+        enableEmailNotifications: user.emailNotificationSettings.enableEmailNotifications !== false,
+        presetMailTemplate: user.emailNotificationSettings.presetMailTemplate || "You have a new activity update on your pocketJob provider account.",
+      });
+    }
+  }, [user]);
+
+  const handleSaveEmailSettings = async (e) => {
+    e.preventDefault();
+    try {
+      setSavingSettings(true);
+      await updateProfile({
+        emailNotificationSettings: {
+          presetEmail: emailSettings.presetEmail,
+          enableEmailNotifications: emailSettings.enableEmailNotifications,
+          presetMailTemplate: emailSettings.presetMailTemplate,
+        },
+      });
+      toast.success("Preset Email settings updated successfully!");
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to update email settings");
+    } finally {
+      setSavingSettings(false);
+    }
+  };
 
   const setActiveTab = (tabName) => {
     setUrlParams({ tab: tabName });
@@ -424,6 +460,64 @@ function ProviderDashboard() {
                 <FaCalendarCheck className="me-2 text-info fs-5" />
                 <span>You have <strong>{daysRemaining} days</strong> remaining in your free trial.</span>
               </div>
+            </div>
+          </div>
+
+          {/* Preset Gmail & Email Settings Card */}
+          <div className="col-12">
+            <div className="card border-0 bg-white shadow-sm p-4">
+              <h5 className="fw-bold mb-3 text-dark border-bottom pb-2 d-flex align-items-center">
+                <FaEnvelope className="text-primary me-2" /> Preset Gmail & Email Notification Settings
+              </h5>
+              <form onSubmit={handleSaveEmailSettings}>
+                <div className="row g-3">
+                  <div className="col-md-12">
+                    <div className="form-check form-switch">
+                      <input
+                        className="form-check-input"
+                        type="checkbox"
+                        id="providerEnableEmail"
+                        checked={emailSettings.enableEmailNotifications}
+                        onChange={(e) => setEmailSettings({ ...emailSettings, enableEmailNotifications: e.target.checked })}
+                      />
+                      <label className="form-check-label fw-semibold text-dark" htmlFor="providerEnableEmail">
+                        Enable Inbox Email Notifications for Job Activities
+                      </label>
+                      <div className="form-text">Receive preset emails whenever candidates apply, accept/reject invitations, or job updates occur.</div>
+                    </div>
+                  </div>
+
+                  <div className="col-md-6">
+                    <label className="form-label text-muted small fw-semibold">Preset Gmail / Target Email Address</label>
+                    <input
+                      type="email"
+                      className="form-control"
+                      placeholder={`Default: ${user?.email}`}
+                      value={emailSettings.presetEmail}
+                      onChange={(e) => setEmailSettings({ ...emailSettings, presetEmail: e.target.value })}
+                    />
+                    <div className="form-text">Leave blank to use your default login email ({user?.email}) or enter custom Gmail.</div>
+                  </div>
+
+                  <div className="col-md-6">
+                    <label className="form-label text-muted small fw-semibold">Preset Email Custom Template Note</label>
+                    <textarea
+                      className="form-control"
+                      rows="2"
+                      placeholder="Add a custom note to include in preset email notifications..."
+                      value={emailSettings.presetMailTemplate}
+                      onChange={(e) => setEmailSettings({ ...emailSettings, presetMailTemplate: e.target.value })}
+                    />
+                    <div className="form-text">This note will appear inside preset notification emails sent to your inbox.</div>
+                  </div>
+                </div>
+
+                <div className="mt-3 text-end">
+                  <button type="submit" className="btn btn-primary px-4 fw-semibold" disabled={savingSettings}>
+                    {savingSettings ? "Saving..." : "Save Preset Email Settings"}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         </div>

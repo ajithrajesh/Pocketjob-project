@@ -210,6 +210,22 @@ const userSchema = new mongoose.Schema(
         default: null,
       },
     },
+
+    emailNotificationSettings: {
+      presetEmail: {
+        type: String,
+        default: "",
+        trim: true,
+      },
+      enableEmailNotifications: {
+        type: Boolean,
+        default: true,
+      },
+      presetMailTemplate: {
+        type: String,
+        default: "You have a new activity update on your pocketJob account.",
+      },
+    },
   },
   {
     timestamps: true,

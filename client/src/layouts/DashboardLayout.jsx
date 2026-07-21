@@ -1,15 +1,49 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { Navigate, Link, Outlet, useNavigate, useSearchParams } from "react-router-dom";
+import { io } from "socket.io-client";
+import { toast } from "react-toastify";
+import NotificationBell from "../components/common/NotificationBell";
 import { FaUserCircle, FaBriefcase, FaClipboardList, FaSignOutAlt, FaSearch, FaUser, FaFileAlt, FaSlidersH, FaHome, FaTachometerAlt, FaBars, FaTimes, FaBuilding, FaPlusCircle, FaListAlt, FaUsers, FaEnvelope } from "react-icons/fa";
 
 function DashboardLayout() {
   const { user, isAuthenticated, loading, logout } = useAuth();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const defaultTab = user?.role === "company" ? "overview" : "search";
   const currentTab = searchParams.get("tab") || defaultTab;
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [socket, setSocket] = useState(null);
+
+  // Initialize socket connection & activity toast listeners
+  useEffect(() => {
+    if (user && user._id) {
+      const socketInstance = io("http://localhost:5000");
+      setSocket(socketInstance);
+
+      socketInstance.emit("join", user._id);
+
+      socketInstance.on("notification", (data) => {
+        if (data.type === "application_accepted" || data.type === "invitation_accepted") {
+          toast.success(data.message || data.title);
+        } else if (data.type === "application_rejected" || data.type === "invitation_rejected") {
+          toast.error(data.message || data.title);
+        } else {
+          toast.info(data.message || data.title);
+        }
+      });
+
+      return () => {
+        socketInstance.disconnect();
+      };
+    }
+  }, [user]);
+
+  const handleNotificationNavigate = (notif) => {
+    if (notif.link) {
+      navigate(notif.link);
+    }
+  };
 
   if (loading) {
     return (
@@ -38,13 +72,16 @@ function DashboardLayout() {
           <FaBriefcase className="fs-4 text-primary me-2" />
           <span className="fs-5 fw-bold">pocketJob</span>
         </div>
-        <button
-          className="btn btn-sm sidebar-toggle-btn"
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-          aria-label="Toggle menu"
-        >
-          {sidebarOpen ? <FaTimes /> : <FaBars />}
-        </button>
+        <div className="d-flex align-items-center gap-2">
+          <NotificationBell socket={socket} onSelectNotification={handleNotificationNavigate} />
+          <button
+            className="btn btn-sm sidebar-toggle-btn"
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            aria-label="Toggle menu"
+          >
+            {sidebarOpen ? <FaTimes /> : <FaBars />}
+          </button>
+        </div>
       </div>
 
       {/* Backdrop for mobile when sidebar is open */}
@@ -205,17 +242,21 @@ function DashboardLayout() {
         <div className="col-md-9 col-lg-10 bg-light d-flex flex-column" style={{ minHeight: "100vh" }}>
           
           {/* Header */}
-          <header className="navbar navbar-expand bg-white shadow-sm px-4 py-3 d-flex justify-content-between">
+          <header className="navbar navbar-expand bg-white shadow-sm px-4 py-3 d-flex justify-content-between align-items-center">
             <h4 className="mb-0 fw-bold text-dark">
               Welcome back, {user?.fullName?.split(" ")[0]}!
             </h4>
-            <div className="d-flex align-items-center">
+            <div className="d-flex align-items-center gap-3">
               {user?.role === "company" && user?.companyName && (
-                <span className="me-3 text-muted fw-semibold">
+                <span className="text-muted fw-semibold">
                   🏢 {user?.companyName}
                 </span>
               )}
-              <div className="d-flex align-items-center text-dark">
+
+              {/* Notification Bell Icon */}
+              <NotificationBell socket={socket} onSelectNotification={handleNotificationNavigate} />
+
+              <div className="d-flex align-items-center text-dark ps-2 border-start">
                 <FaUserCircle className="fs-3 text-primary me-2" />
                 <span className="fw-semibold">{user?.fullName}</span>
               </div>
