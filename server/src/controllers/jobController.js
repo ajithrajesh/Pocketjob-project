@@ -9,6 +9,10 @@ import {
   getAppliedJobsService,
   getJobApplicationsService,
   updateApplicationStatusService,
+  getJobByIdService,
+  saveJobService,
+  unsaveJobService,
+  getSavedJobsService,
 } from "../services/jobService.js";
 import { createAndSendNotification } from "../services/notificationService.js";
 import User from "../models/User.js";
@@ -141,7 +145,7 @@ export const deleteJob = async (req, res) => {
 
 export const applyJob = async (req, res) => {
   try {
-    const app = await applyJobService(req.params.id, req.user._id);
+    const app = await applyJobService(req.params.id, req.user._id, req.body.answers);
 
     // Notify company of new applicant
     if (app && app.job) {
@@ -233,6 +237,66 @@ export const updateApplicationStatus = async (req, res) => {
       success: true,
       message: "Application status updated successfully",
       application,
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+export const getJob = async (req, res) => {
+  try {
+    const job = await getJobByIdService(req.params.id);
+    res.status(200).json({
+      success: true,
+      job,
+    });
+  } catch (error) {
+    res.status(404).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+export const saveJob = async (req, res) => {
+  try {
+    await saveJobService(req.params.id, req.user._id);
+    res.status(200).json({
+      success: true,
+      message: "Job saved successfully",
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+export const unsaveJob = async (req, res) => {
+  try {
+    await unsaveJobService(req.params.id, req.user._id);
+    res.status(200).json({
+      success: true,
+      message: "Job unsaved successfully",
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+export const getSavedJobs = async (req, res) => {
+  try {
+    const jobs = await getSavedJobsService(req.user._id);
+    res.status(200).json({
+      success: true,
+      jobs,
     });
   } catch (error) {
     res.status(400).json({

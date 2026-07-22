@@ -4,11 +4,11 @@ import Job from "../models/Job.js";
 
 export const seedJobs = async () => {
   try {
-    
-    await Job.deleteMany({});
-
-   
-
+    const existingJobsCount = await Job.countDocuments();
+    if (existingJobsCount > 0) {
+      console.log(`ℹ️ Database already contains ${existingJobsCount} job(s). Skipping seeding to preserve posted jobs.`);
+      return;
+    }
     
     let companyUser = await User.findOne({ role: "company" });
     if (!companyUser) {

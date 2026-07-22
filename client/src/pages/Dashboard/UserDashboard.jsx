@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef } from "react";
 import { io } from "socket.io-client";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useAuth } from "../../context/AuthContext";
 import { getProfile, updateProfile, uploadAadhaarFront, uploadAadhaarBack, uploadLicense, uploadResume } from "../../services/userService";
-import { searchJobs, getRecommendedJobs, applyToJob, getMyAppliedJobs } from "../../services/jobService";
+import { searchJobs, getRecommendedJobs, applyToJob, getMyAppliedJobs, getSavedJobs, unsaveJob } from "../../services/jobService";
 import { getInvitations, updateInvitationStatus } from "../../services/invitationService";
-import { FaUpload, FaSearch, FaMapMarkerAlt, FaFileAlt, FaCheckCircle, FaUser, FaSlidersH, FaEnvelope, FaCheck, FaTimes } from "react-icons/fa";
+import { FaUpload, FaSearch, FaMapMarkerAlt, FaFileAlt, FaCheckCircle, FaUser, FaSlidersH, FaEnvelope, FaCheck, FaTimes, FaBookmark, FaTrash } from "react-icons/fa";
 import LocationAutocomplete from "../../components/common/LocationAutocomplete";
 
 function UserDashboard() {
@@ -59,6 +59,10 @@ function UserDashboard() {
   // Invitations State
   const [invitations, setInvitations] = useState([]);
   const [loadingInvitations, setLoadingInvitations] = useState(false);
+
+  // Saved Jobs State
+  const [savedJobs, setSavedJobs] = useState([]);
+  const [loadingSaved, setLoadingSaved] = useState(false);
 
   // Profile Edit State
   const [isEditing, setIsEditing] = useState(false);
@@ -185,6 +189,34 @@ function UserDashboard() {
   useEffect(() => {
     if (activeTab === "recommended") {
       fetchRecommendations();
+    }
+  }, [activeTab]);
+
+  const fetchSavedJobs = async () => {
+    try {
+      setLoadingSaved(true);
+      const data = await getSavedJobs();
+      setSavedJobs(data.jobs || []);
+    } catch (error) {
+      toast.error("Failed to load saved jobs");
+    } finally {
+      setLoadingSaved(false);
+    }
+  };
+
+  const handleUnsaveJob = async (jobId) => {
+    try {
+      await unsaveJob(jobId);
+      toast.success("Job removed from saved list");
+      fetchSavedJobs();
+    } catch (error) {
+      toast.error("Failed to remove job from saved list");
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === "saved") {
+      fetchSavedJobs();
     }
   }, [activeTab]);
 
@@ -375,9 +407,9 @@ function UserDashboard() {
                           </button>
                         )
                       ) : (
-                        <button className="btn btn-outline-primary w-100" onClick={() => handleApply(job._id, job.title)}>
-                          Quick Apply
-                        </button>
+                        <Link className="btn btn-outline-primary w-100" to={`/jobs/${job._id}`}>
+                          View Details
+                        </Link>
                       )}
                     </div>
                   </div>
@@ -442,9 +474,9 @@ function UserDashboard() {
                           </button>
                         )
                       ) : (
-                        <button className="btn btn-primary w-100" onClick={() => handleApply(job._id, job.title)}>
-                          Quick Apply
-                        </button>
+                        <Link className="btn btn-primary w-100" to={`/jobs/${job._id}`}>
+                          View Details
+                        </Link>
                       )}
                     </div>
                   </div>
@@ -789,15 +821,23 @@ function UserDashboard() {
                     <th>Company</th>
                     <th>Salary</th>
                     <th>Location</th>
+                    <th>Submitted Answers</th>
                     <th>Date Applied</th>
                     <th>Status</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {appliedJobs.map((app) => (
                     <tr key={app._id}>
                       <td>
-                        <span className="fw-bold text-dark">{app.job?.title || "Deleted Job"}</span>
+                        {app.job?._id ? (
+                          <Link to={`/jobs/${app.job._id}`} className="fw-bold text-primary text-decoration-none">
+                            {app.job.title}
+                          </Link>
+                        ) : (
+                          <span className="fw-bold text-dark">Deleted Job</span>
+                        )}
                         {app.job?.category && (
                           <span className="badge bg-light text-secondary border ms-2">{app.job.category}</span>
                         )}
@@ -805,6 +845,26 @@ function UserDashboard() {
                       <td>🏢 {app.job?.companyName || "N/A"}</td>
                       <td className="text-success fw-semibold">{app.job?.salary || "Not Specified"}</td>
                       <td>📍 {app.job?.location?.city ? `${app.job.location.city}, ${app.job.location.state}` : "Remote"}</td>
+                      <td>
+                        {app.answers && app.answers.length > 0 ? (
+                          <div className="small">
+                            {app.answers.map((ans, idx) => (
+                              <div key={idx} className="mb-1">
+                                <strong className="text-secondary">{ans.questionText}:</strong>{" "}
+                                {ans.questionType === "resume" && ans.answer ? (
+                                  <a href={ans.answer} target="_blank" rel="noreferrer" className="text-primary text-decoration-none">
+                                    <FaFileAlt className="me-1" /> Submitted Resume
+                                  </a>
+                                ) : (
+                                  <span className="text-dark fw-medium">{ans.answer || "N/A"}</span>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="badge bg-light text-secondary border">Quick Apply</span>
+                        )}
+                      </td>
                       <td className="text-muted small">{new Date(app.createdAt).toLocaleDateString()}</td>
                       <td>
                         {app.status === "accepted" ? (
@@ -813,6 +873,13 @@ function UserDashboard() {
                           <span className="badge bg-danger px-3 py-2 fs-7">Rejected</span>
                         ) : (
                           <span className="badge bg-warning text-dark px-3 py-2 fs-7">Pending</span>
+                        )}
+                      </td>
+                      <td>
+                        {app.job?._id && (
+                          <Link to={`/jobs/${app.job._id}`} className="btn btn-sm btn-outline-primary fw-semibold">
+                            View Details
+                          </Link>
                         )}
                       </td>
                     </tr>
@@ -902,6 +969,72 @@ function UserDashboard() {
                             </span>
                           )}
                         </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Tab Content: Saved Jobs */}
+      {activeTab === "saved" && (
+        <div>
+          <h4 className="fw-bold mb-3 text-dark">Saved Jobs</h4>
+          <p className="text-muted small mb-4">
+            Shifts and jobs you have saved for later. You can view their details or remove them.
+          </p>
+
+          {loadingSaved ? (
+            <div className="text-center py-5">
+              <div className="spinner-border text-primary" role="status"></div>
+            </div>
+          ) : savedJobs.length === 0 ? (
+            <div className="text-center py-5 text-muted bg-white border rounded">
+              You haven't saved any jobs yet. Browse jobs under the "Job Search" tab!
+            </div>
+          ) : (
+            <div className="row g-3">
+              {savedJobs.map((job) => (
+                <div className="col-md-6" key={job._id}>
+                  <div className="card h-100 shadow-sm border border-light">
+                    <div className="card-body d-flex flex-column justify-content-between">
+                      <div>
+                        <div className="d-flex justify-content-between align-items-start mb-2">
+                          <h5 className="card-title fw-bold text-dark mb-0">{job.title}</h5>
+                          <span className="badge bg-secondary">{job.category}</span>
+                        </div>
+                        <h6 className="text-primary mb-3">🏢 {job.companyName}</h6>
+                        <p className="card-text text-muted text-truncate">{job.description}</p>
+                        
+                        <div className="d-flex flex-wrap gap-2 mb-3">
+                          <span className="text-muted small d-flex align-items-center">
+                            <FaMapMarkerAlt className="me-1 text-danger" /> 
+                            {job.location?.city ? `${job.location.city}, ${job.location.state}` : "Remote"}
+                          </span>
+                          <span className="text-success small fw-bold">💰 {job.salary || "Not Specified"}</span>
+                        </div>
+
+                        {job.requirements && job.requirements.length > 0 && (
+                          <div className="small text-muted mb-2">
+                            <strong>Requirements:</strong> {job.requirements.join(", ")}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="border-top pt-3 mt-3 d-flex gap-2">
+                        <Link to={`/jobs/${job._id}`} className="btn btn-primary btn-sm flex-grow-1 py-2 fw-semibold text-center">
+                          View Details
+                        </Link>
+                        <button
+                          className="btn btn-outline-danger btn-sm px-3"
+                          onClick={() => handleUnsaveJob(job._id)}
+                          title="Remove from saved"
+                        >
+                          <FaTrash />
+                        </button>
                       </div>
                     </div>
                   </div>

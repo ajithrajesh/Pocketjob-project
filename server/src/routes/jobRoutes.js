@@ -10,6 +10,10 @@ import {
   getAppliedJobs,
   getJobApplications,
   updateApplicationStatus,
+  getJob,
+  saveJob,
+  unsaveJob,
+  getSavedJobs,
 } from "../controllers/jobController.js";
 import { protect } from "../middleware/authMiddleware.js";
 
@@ -20,13 +24,19 @@ router.get("/search", searchJobs);
 
 // Protected routes
 router.post("/", protect, createJob);
-router.put("/:id", protect, updateJob);
-router.delete("/:id", protect, deleteJob);
 router.get("/recommended", protect, getRecommendedJobs);
 router.get("/my-jobs", protect, getMyJobs);
-router.post("/:id/apply", protect, applyJob);
 router.get("/applied", protect, getAppliedJobs);
-router.get("/:id/applications", protect, getJobApplications);
+router.get("/saved", protect, getSavedJobs);
 router.put("/applications/:applicationId", protect, updateApplicationStatus);
+
+// Single Job & Sub-resource routes
+router.get("/:id", getJob);
+router.put("/:id", protect, updateJob);
+router.delete("/:id", protect, deleteJob);
+router.post("/:id/apply", protect, applyJob);
+router.post("/:id/save", protect, saveJob);
+router.post("/:id/unsave", protect, unsaveJob);
+router.get("/:id/applications", protect, getJobApplications);
 
 export default router;

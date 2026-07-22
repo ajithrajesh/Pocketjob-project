@@ -72,6 +72,11 @@ function ProviderDashboard() {
     city: "",
     pincode: "",
     requirements: "",
+    askExperience: false,
+    askRelocate: false,
+    askCurrentSalary: false,
+    askExpectedSalary: false,
+    askResume: false,
   });
   const [posting, setPosting] = useState(false);
 
@@ -89,6 +94,11 @@ function ProviderDashboard() {
     city: "",
     pincode: "",
     requirements: "",
+    askExperience: false,
+    askRelocate: false,
+    askCurrentSalary: false,
+    askExpectedSalary: false,
+    askResume: false,
   });
   const [updating, setUpdating] = useState(false);
 
@@ -237,6 +247,34 @@ function ProviderDashboard() {
     setEditFormData({ ...editFormData, [e.target.name]: e.target.value });
   };
 
+  const handleCheckboxChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.checked });
+  };
+
+  const handleEditCheckboxChange = (e) => {
+    setEditFormData({ ...editFormData, [e.target.name]: e.target.checked });
+  };
+
+  const buildPresetQuestions = (data) => {
+    const list = [];
+    if (data.askExperience) {
+      list.push({ id: "experience", questionText: "How much experience do you have?", required: false });
+    }
+    if (data.askRelocate) {
+      list.push({ id: "relocate", questionText: "Are you willing to relocate?", required: false });
+    }
+    if (data.askCurrentSalary) {
+      list.push({ id: "currentSalary", questionText: "Current salary?", required: false });
+    }
+    if (data.askExpectedSalary) {
+      list.push({ id: "expectedSalary", questionText: "Expected salary?", required: false });
+    }
+    if (data.askResume) {
+      list.push({ id: "resume", questionText: "Resend resume?", required: false });
+    }
+    return list;
+  };
+
   const handlePostJob = async (e) => {
     e.preventDefault();
     if (!formData.title || !formData.description || !formData.category) {
@@ -260,6 +298,7 @@ function ProviderDashboard() {
           pincode: formData.pincode,
         },
         requirements: formData.requirements ? formData.requirements.split(",").map((req) => req.trim()) : [],
+        presetQuestions: buildPresetQuestions(formData),
       };
 
       await postJob(jobData);
@@ -276,6 +315,11 @@ function ProviderDashboard() {
         city: "",
         pincode: "",
         requirements: "",
+        askExperience: false,
+        askRelocate: false,
+        askCurrentSalary: false,
+        askExpectedSalary: false,
+        askResume: false,
       });
       setActiveTab("my-jobs");
     } catch (error) {
@@ -287,6 +331,7 @@ function ProviderDashboard() {
 
   const startEditJob = (job) => {
     setEditingJobId(job._id);
+    const pQuestions = job.presetQuestions || [];
     setEditFormData({
       title: job.title || "",
       description: job.description || "",
@@ -299,6 +344,11 @@ function ProviderDashboard() {
       city: job.location?.city || "",
       pincode: job.location?.pincode || "",
       requirements: job.requirements ? job.requirements.join(", ") : "",
+      askExperience: pQuestions.some((q) => q.id === "experience"),
+      askRelocate: pQuestions.some((q) => q.id === "relocate"),
+      askCurrentSalary: pQuestions.some((q) => q.id === "currentSalary"),
+      askExpectedSalary: pQuestions.some((q) => q.id === "expectedSalary"),
+      askResume: pQuestions.some((q) => q.id === "resume"),
     });
     setActiveTab("edit");
   };
@@ -321,6 +371,7 @@ function ProviderDashboard() {
           pincode: editFormData.pincode,
         },
         requirements: editFormData.requirements ? editFormData.requirements.split(",").map((req) => req.trim()) : [],
+        presetQuestions: buildPresetQuestions(editFormData),
       };
 
       await updateJob(editingJobId, jobData);
@@ -633,6 +684,43 @@ function ProviderDashboard() {
               <label className="form-label">Pincode</label>
               <input type="text" className="form-control" name="pincode" value={formData.pincode} onChange={handleChange} placeholder="e.g. 682024" />
             </div>
+            <h5 className="fw-bold mt-4 mb-2 text-secondary border-bottom pb-2">Application Questionnaire (Detailed Apply)</h5>
+            <p className="text-muted small mb-2">Select preset questions to require/prompt candidates during Detailed Apply:</p>
+            <div className="col-12 border p-3 rounded bg-light mb-3">
+              <div className="row g-3">
+                <div className="col-md-4">
+                  <div className="form-check">
+                    <input className="form-check-input" type="checkbox" id="postAskExperience" name="askExperience" checked={formData.askExperience} onChange={handleCheckboxChange} />
+                    <label className="form-check-label text-dark small fw-semibold" htmlFor="postAskExperience">How much experience do you have?</label>
+                  </div>
+                </div>
+                <div className="col-md-4">
+                  <div className="form-check">
+                    <input className="form-check-input" type="checkbox" id="postAskRelocate" name="askRelocate" checked={formData.askRelocate} onChange={handleCheckboxChange} />
+                    <label className="form-check-label text-dark small fw-semibold" htmlFor="postAskRelocate">Are you willing to relocate?</label>
+                  </div>
+                </div>
+                <div className="col-md-4">
+                  <div className="form-check">
+                    <input className="form-check-input" type="checkbox" id="postAskCurrentSalary" name="askCurrentSalary" checked={formData.askCurrentSalary} onChange={handleCheckboxChange} />
+                    <label className="form-check-label text-dark small fw-semibold" htmlFor="postAskCurrentSalary">Current salary?</label>
+                  </div>
+                </div>
+                <div className="col-md-4">
+                  <div className="form-check">
+                    <input className="form-check-input" type="checkbox" id="postAskExpectedSalary" name="askExpectedSalary" checked={formData.askExpectedSalary} onChange={handleCheckboxChange} />
+                    <label className="form-check-label text-dark small fw-semibold" htmlFor="postAskExpectedSalary">Expected salary?</label>
+                  </div>
+                </div>
+                <div className="col-md-4">
+                  <div className="form-check">
+                    <input className="form-check-input" type="checkbox" id="postAskResume" name="askResume" checked={formData.askResume} onChange={handleCheckboxChange} />
+                    <label className="form-check-label text-dark small fw-semibold" htmlFor="postAskResume">Resend resume?</label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <div className="col-12 mt-4">
               <button type="submit" className="btn btn-primary w-100 py-2 fw-bold" disabled={posting}>
                 {posting ? "Posting Job..." : "Post Job Opening"}
@@ -744,6 +832,43 @@ function ProviderDashboard() {
               <label className="form-label">Pincode</label>
               <input type="text" className="form-control" name="pincode" value={editFormData.pincode} onChange={handleEditChange} />
             </div>
+            <h5 className="fw-bold mt-4 mb-2 text-secondary border-bottom pb-2">Application Questionnaire (Detailed Apply)</h5>
+            <p className="text-muted small mb-2">Select preset questions to require/prompt candidates during Detailed Apply:</p>
+            <div className="col-12 border p-3 rounded bg-light mb-3">
+              <div className="row g-3">
+                <div className="col-md-4">
+                  <div className="form-check">
+                    <input className="form-check-input" type="checkbox" id="editAskExperience" name="askExperience" checked={editFormData.askExperience} onChange={handleEditCheckboxChange} />
+                    <label className="form-check-label text-dark small fw-semibold" htmlFor="editAskExperience">How much experience do you have?</label>
+                  </div>
+                </div>
+                <div className="col-md-4">
+                  <div className="form-check">
+                    <input className="form-check-input" type="checkbox" id="editAskRelocate" name="askRelocate" checked={editFormData.askRelocate} onChange={handleEditCheckboxChange} />
+                    <label className="form-check-label text-dark small fw-semibold" htmlFor="editAskRelocate">Are you willing to relocate?</label>
+                  </div>
+                </div>
+                <div className="col-md-4">
+                  <div className="form-check">
+                    <input className="form-check-input" type="checkbox" id="editAskCurrentSalary" name="askCurrentSalary" checked={editFormData.askCurrentSalary} onChange={handleEditCheckboxChange} />
+                    <label className="form-check-label text-dark small fw-semibold" htmlFor="editAskCurrentSalary">Current salary?</label>
+                  </div>
+                </div>
+                <div className="col-md-4">
+                  <div className="form-check">
+                    <input className="form-check-input" type="checkbox" id="editAskExpectedSalary" name="askExpectedSalary" checked={editFormData.askExpectedSalary} onChange={handleEditCheckboxChange} />
+                    <label className="form-check-label text-dark small fw-semibold" htmlFor="editAskExpectedSalary">Expected salary?</label>
+                  </div>
+                </div>
+                <div className="col-md-4">
+                  <div className="form-check">
+                    <input className="form-check-input" type="checkbox" id="editAskResume" name="askResume" checked={editFormData.askResume} onChange={handleEditCheckboxChange} />
+                    <label className="form-check-label text-dark small fw-semibold" htmlFor="editAskResume">Resend resume?</label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <div className="col-6 mt-4">
               <button type="button" className="btn btn-outline-secondary w-100 py-2 fw-semibold" onClick={() => setActiveTab("my-jobs")}>
                 Cancel
@@ -862,6 +987,7 @@ function ProviderDashboard() {
                     <th>Contact</th>
                     <th>Location / Gender</th>
                     <th>Verification Documents</th>
+                    <th>Application Answers</th>
                     <th className="text-center">Status</th>
                     <th className="text-center">Actions</th>
                   </tr>
@@ -912,6 +1038,26 @@ function ProviderDashboard() {
                             <span className="text-muted small">No docs uploaded</span>
                           )}
                         </div>
+                      </td>
+                      <td>
+                        {app.answers && app.answers.length > 0 ? (
+                          <div className="small">
+                            {app.answers.map((ans, idx) => (
+                              <div key={idx} className="mb-1">
+                                <strong className="text-secondary">{ans.questionText}:</strong>{" "}
+                                {ans.questionType === "resume" && ans.answer ? (
+                                  <a href={ans.answer} target="_blank" rel="noreferrer" className="text-primary text-decoration-none">
+                                    <FaFileAlt className="me-1" /> Submitted Resume
+                                  </a>
+                                ) : (
+                                  <span className="text-dark fw-medium">{ans.answer || "N/A"}</span>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="badge bg-light text-secondary border">Quick Apply</span>
+                        )}
                       </td>
                       <td className="text-center">
                         <span className={`badge py-2 px-3 text-capitalize ${app.status === "accepted" ? "bg-success" : app.status === "rejected" ? "bg-danger" : "bg-warning text-dark"}`}>

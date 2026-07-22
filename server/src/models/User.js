@@ -226,6 +226,12 @@ const userSchema = new mongoose.Schema(
         default: "You have a new activity update on your pocketJob account.",
       },
     },
+    savedJobs: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Job",
+      },
+    ],
   },
   {
     timestamps: true,

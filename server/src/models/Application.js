@@ -17,6 +17,13 @@ const applicationSchema = new mongoose.Schema(
       enum: ["pending", "accepted", "rejected"],
       default: "pending",
     },
+    answers: [
+      {
+        questionText: { type: String },
+        questionType: { type: String },
+        answer: { type: String },
+      },
+    ],
   },
   {
     timestamps: true,

@@ -31,8 +31,8 @@ export const getMyJobs = async () => {
   return response.data;
 };
 
-export const applyToJob = async (jobId) => {
-  const response = await api.post(`/jobs/${jobId}/apply`);
+export const applyToJob = async (jobId, answers = []) => {
+  const response = await api.post(`/jobs/${jobId}/apply`, { answers });
   return response.data;
 };
 
@@ -48,5 +48,25 @@ export const getJobApplications = async (jobId) => {
 
 export const updateApplicationStatus = async (applicationId, status) => {
   const response = await api.put(`/jobs/applications/${applicationId}`, { status });
+  return response.data;
+};
+
+export const getJobById = async (jobId) => {
+  const response = await api.get(`/jobs/${jobId}`);
+  return response.data;
+};
+
+export const saveJob = async (jobId) => {
+  const response = await api.post(`/jobs/${jobId}/save`);
+  return response.data;
+};
+
+export const unsaveJob = async (jobId) => {
+  const response = await api.post(`/jobs/${jobId}/unsave`);
+  return response.data;
+};
+
+export const getSavedJobs = async () => {
+  const response = await api.get("/jobs/saved");
   return response.data;
 };

@@ -60,6 +60,13 @@ const jobSchema = new mongoose.Schema(
         type: String,
       },
     ],
+    presetQuestions: [
+      {
+        id: { type: String, required: true },
+        questionText: { type: String, required: true },
+        required: { type: Boolean, default: false },
+      },
+    ],
   },
   {
     timestamps: true,

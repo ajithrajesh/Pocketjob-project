@@ -8,7 +8,7 @@ export const createJobService = async (userId, jobData) => {
     throw new Error("Only job providers or admins can post jobs");
   }
 
-  const { title, description, category, location, salary, requirements, slots, date } = jobData;
+  const { title, description, category, location, salary, requirements, slots, date, presetQuestions } = jobData;
 
   if (!title || !description || !category) {
     throw new Error("Title, Description, and Category are required");
@@ -25,6 +25,7 @@ export const createJobService = async (userId, jobData) => {
     slots: slots || 1,
     date: date || "",
     requirements: requirements || [],
+    presetQuestions: presetQuestions || [],
   });
 
   return job;
@@ -95,7 +96,7 @@ export const updateJobService = async (jobId, userId, updateData) => {
     }
   }
 
-  const { title, description, category, location, salary, slots, date, requirements } = updateData;
+  const { title, description, category, location, salary, slots, date, requirements, presetQuestions } = updateData;
 
   job.title = title || job.title;
   job.description = description || job.description;
@@ -105,6 +106,9 @@ export const updateJobService = async (jobId, userId, updateData) => {
   job.slots = slots !== undefined ? slots : job.slots;
   job.date = date !== undefined ? date : job.date;
   job.requirements = requirements || job.requirements;
+  if (presetQuestions !== undefined) {
+    job.presetQuestions = presetQuestions;
+  }
 
   await job.save();
   return job;
@@ -129,7 +133,7 @@ export const deleteJobService = async (jobId, userId) => {
   return { message: "Job deleted successfully" };
 };
 
-export const applyJobService = async (jobId, seekerId) => {
+export const applyJobService = async (jobId, seekerId, answers) => {
   const job = await Job.findById(jobId);
   if (!job) {
     throw new Error("Job not found");
@@ -150,6 +154,7 @@ export const applyJobService = async (jobId, seekerId) => {
     job: jobId,
     seeker: seekerId,
     status: "pending",
+    answers: answers || [],
   });
 
   return app;
@@ -202,4 +207,52 @@ export const updateApplicationStatusService = async (applicationId, userId, stat
   application.status = status;
   await application.save();
   return application;
+};
+
+export const getJobByIdService = async (jobId) => {
+  const job = await Job.findById(jobId);
+  if (!job) {
+    throw new Error("Job not found");
+  }
+  return job;
+};
+
+export const saveJobService = async (jobId, userId) => {
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  if (!user.savedJobs) {
+    user.savedJobs = [];
+  }
+
+  if (!user.savedJobs.includes(jobId)) {
+    user.savedJobs.push(jobId);
+    await user.save();
+  }
+
+  return user;
+};
+
+export const unsaveJobService = async (jobId, userId) => {
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  if (user.savedJobs) {
+    user.savedJobs = user.savedJobs.filter((id) => id.toString() !== jobId.toString());
+    await user.save();
+  }
+
+  return user;
+};
+
+export const getSavedJobsService = async (userId) => {
+  const user = await User.findById(userId).populate("savedJobs");
+  if (!user) {
+    throw new Error("User not found");
+  }
+  return user.savedJobs || [];
 };

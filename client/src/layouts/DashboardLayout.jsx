@@ -4,7 +4,7 @@ import { Navigate, Link, Outlet, useNavigate, useSearchParams } from "react-rout
 import { io } from "socket.io-client";
 import { toast } from "react-toastify";
 import NotificationBell from "../components/common/NotificationBell";
-import { FaUserCircle, FaBriefcase, FaClipboardList, FaSignOutAlt, FaSearch, FaUser, FaFileAlt, FaSlidersH, FaHome, FaTachometerAlt, FaBars, FaTimes, FaBuilding, FaPlusCircle, FaListAlt, FaUsers, FaEnvelope } from "react-icons/fa";
+import { FaUserCircle, FaBriefcase, FaClipboardList, FaSignOutAlt, FaSearch, FaUser, FaFileAlt, FaSlidersH, FaHome, FaTachometerAlt, FaBars, FaTimes, FaBuilding, FaPlusCircle, FaListAlt, FaUsers, FaEnvelope, FaBookmark } from "react-icons/fa";
 
 function DashboardLayout() {
   const { user, isAuthenticated, loading, logout } = useAuth();
@@ -136,6 +136,15 @@ function DashboardLayout() {
                       className={`nav-link d-flex align-items-start sidebar-nav-link ${currentTab === "recommended" ? "active" : ""}`}
                     >
                       <FaSlidersH className="me-2" /> Recommended Jobs
+                    </Link>
+                  </li>
+                  <li className="nav-item">
+                    <Link
+                      to="/dashboard?tab=saved"
+                      onClick={() => setSidebarOpen(false)}
+                      className={`nav-link d-flex align-items-start sidebar-nav-link ${currentTab === "saved" ? "active" : ""}`}
+                    >
+                      <FaBookmark className="me-2" /> Saved Jobs
                     </Link>
                   </li>
                   <li className="nav-item">

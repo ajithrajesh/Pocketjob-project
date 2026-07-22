@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useSearchParams, useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { searchJobs, applyToJob, getMyAppliedJobs } from "../../services/jobService";
 import { toast } from "react-toastify";
@@ -223,9 +223,9 @@ function Jobs() {
                       </button>
                     )
                   ) : (
-                    <button className="btn btn-primary w-100 py-2 fw-semibold" onClick={() => handleApply(job._id, job.title)}>
-                      Apply Now
-                    </button>
+                    <Link to={`/jobs/${job._id}`} className="btn btn-primary w-100 py-2 fw-semibold">
+                      View Details
+                    </Link>
                   )}
                 </div>
               </div>

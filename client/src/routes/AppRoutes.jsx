@@ -6,6 +6,7 @@ import Login from "../pages/Login/Login";
 import Register from "../pages/Register/Register";
 import About from "../pages/About/About";
 import Jobs from "../pages/Jobs/Jobs";
+import JobDetails from "../pages/Jobs/JobDetails";
 
 
 import UserDashboard from "../pages/Dashboard/UserDashboard";
@@ -33,6 +34,7 @@ function AppRoutes() {
       <Route element={<PublicLayout />}>
         <Route path="/" element={<Home />} />
         <Route path="/jobs" element={<Jobs />} />
+        <Route path="/jobs/:id" element={<JobDetails />} />
         <Route path="/about" element={<About />} />
       </Route>
 
