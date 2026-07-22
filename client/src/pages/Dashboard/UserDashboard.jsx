@@ -407,7 +407,7 @@ function UserDashboard() {
                           </button>
                         )
                       ) : (
-                        <Link className="btn btn-outline-primary w-100" to={`/jobs/${job._id}`}>
+                        <Link className="btn btn-outline-primary w-100" to={`/dashboard/jobs/${job._id}`}>
                           View Details
                         </Link>
                       )}
@@ -474,7 +474,7 @@ function UserDashboard() {
                           </button>
                         )
                       ) : (
-                        <Link className="btn btn-primary w-100" to={`/jobs/${job._id}`}>
+                        <Link className="btn btn-primary w-100" to={`/dashboard/jobs/${job._id}`}>
                           View Details
                         </Link>
                       )}
@@ -832,7 +832,7 @@ function UserDashboard() {
                     <tr key={app._id}>
                       <td>
                         {app.job?._id ? (
-                          <Link to={`/jobs/${app.job._id}`} className="fw-bold text-primary text-decoration-none">
+                          <Link to={`/dashboard/jobs/${app.job._id}`} className="fw-bold text-primary text-decoration-none">
                             {app.job.title}
                           </Link>
                         ) : (
@@ -877,7 +877,7 @@ function UserDashboard() {
                       </td>
                       <td>
                         {app.job?._id && (
-                          <Link to={`/jobs/${app.job._id}`} className="btn btn-sm btn-outline-primary fw-semibold">
+                          <Link to={`/dashboard/jobs/${app.job._id}`} className="btn btn-sm btn-outline-primary fw-semibold">
                             View Details
                           </Link>
                         )}
@@ -1025,7 +1025,7 @@ function UserDashboard() {
                       </div>
 
                       <div className="border-top pt-3 mt-3 d-flex gap-2">
-                        <Link to={`/jobs/${job._id}`} className="btn btn-primary btn-sm flex-grow-1 py-2 fw-semibold text-center">
+                        <Link to={`/dashboard/jobs/${job._id}`} className="btn btn-primary btn-sm flex-grow-1 py-2 fw-semibold text-center">
                           View Details
                         </Link>
                         <button

@@ -70,6 +70,18 @@ export const uploadResume = async (file) => {
   return response.data;
 };
 
+export const uploadDocument = async (file) => {
+  const formData = new FormData();
+  formData.append("document", file);
+
+  const response = await api.post("/users/upload-document", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+  return response.data;
+};
+
 export const getJobSeekers = async (params) => {
   const response = await api.get("/users/seekers", { params });
   return response.data;

@@ -79,6 +79,7 @@ function ProviderDashboard() {
     askResume: false,
   });
   const [posting, setPosting] = useState(false);
+  const [customQuestions, setCustomQuestions] = useState([]);
 
   // Edit Job State
   const [editingJobId, setEditingJobId] = useState(null);
@@ -101,6 +102,7 @@ function ProviderDashboard() {
     askResume: false,
   });
   const [updating, setUpdating] = useState(false);
+  const [editCustomQuestions, setEditCustomQuestions] = useState([]);
 
   // Posted Jobs State
   const [myJobs, setMyJobs] = useState([]);
@@ -255,7 +257,7 @@ function ProviderDashboard() {
     setEditFormData({ ...editFormData, [e.target.name]: e.target.checked });
   };
 
-  const buildPresetQuestions = (data) => {
+  const buildPresetQuestions = (data, custom = []) => {
     const list = [];
     if (data.askExperience) {
       list.push({ id: "experience", questionText: "How much experience do you have?", required: false });
@@ -272,7 +274,47 @@ function ProviderDashboard() {
     if (data.askResume) {
       list.push({ id: "resume", questionText: "Resend resume?", required: false });
     }
+    custom.forEach((q, index) => {
+      if (q.questionText && q.questionText.trim()) {
+        list.push({
+          id: `custom-${Date.now()}-${index}`,
+          questionText: q.questionText.trim(),
+          required: !!q.required,
+          answerType: q.requiresDocument ? "document" : "text",
+        });
+      }
+    });
     return list;
+  };
+
+  // Custom question handlers — Post Job form
+  const addCustomQuestion = () => {
+    setCustomQuestions([...customQuestions, { questionText: "", required: false, requiresDocument: false }]);
+  };
+
+  const updateCustomQuestion = (index, field, value) => {
+    const updated = [...customQuestions];
+    updated[index] = { ...updated[index], [field]: value };
+    setCustomQuestions(updated);
+  };
+
+  const removeCustomQuestion = (index) => {
+    setCustomQuestions(customQuestions.filter((_, i) => i !== index));
+  };
+
+  // Custom question handlers — Edit Job form
+  const addEditCustomQuestion = () => {
+    setEditCustomQuestions([...editCustomQuestions, { questionText: "", required: false, requiresDocument: false }]);
+  };
+
+  const updateEditCustomQuestion = (index, field, value) => {
+    const updated = [...editCustomQuestions];
+    updated[index] = { ...updated[index], [field]: value };
+    setEditCustomQuestions(updated);
+  };
+
+  const removeEditCustomQuestion = (index) => {
+    setEditCustomQuestions(editCustomQuestions.filter((_, i) => i !== index));
   };
 
   const handlePostJob = async (e) => {
@@ -298,7 +340,7 @@ function ProviderDashboard() {
           pincode: formData.pincode,
         },
         requirements: formData.requirements ? formData.requirements.split(",").map((req) => req.trim()) : [],
-        presetQuestions: buildPresetQuestions(formData),
+        presetQuestions: buildPresetQuestions(formData, customQuestions),
       };
 
       await postJob(jobData);
@@ -321,6 +363,7 @@ function ProviderDashboard() {
         askExpectedSalary: false,
         askResume: false,
       });
+      setCustomQuestions([]);
       setActiveTab("my-jobs");
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to post job");
@@ -350,6 +393,12 @@ function ProviderDashboard() {
       askExpectedSalary: pQuestions.some((q) => q.id === "expectedSalary"),
       askResume: pQuestions.some((q) => q.id === "resume"),
     });
+    const fixedIds = ["experience", "relocate", "currentSalary", "expectedSalary", "resume"];
+    setEditCustomQuestions(
+      pQuestions
+        .filter((q) => !fixedIds.includes(q.id))
+        .map((q) => ({ questionText: q.questionText, required: q.required, requiresDocument: q.answerType === "document" }))
+    );
     setActiveTab("edit");
   };
 
@@ -371,7 +420,7 @@ function ProviderDashboard() {
           pincode: editFormData.pincode,
         },
         requirements: editFormData.requirements ? editFormData.requirements.split(",").map((req) => req.trim()) : [],
-        presetQuestions: buildPresetQuestions(editFormData),
+        presetQuestions: buildPresetQuestions(editFormData, editCustomQuestions),
       };
 
       await updateJob(editingJobId, jobData);
@@ -721,6 +770,56 @@ function ProviderDashboard() {
               </div>
             </div>
 
+            <div className="col-12 mb-3">
+              <div className="d-flex justify-content-between align-items-center mb-2">
+                <label className="form-label fw-semibold mb-0">Your Own Custom Questions</label>
+                <button type="button" className="btn btn-sm btn-outline-primary" onClick={addCustomQuestion}>
+                  <FaPlusCircle className="me-1" /> Add Question
+                </button>
+              </div>
+              {customQuestions.length === 0 && (
+                <p className="text-muted small mb-0">No custom questions added yet.</p>
+              )}
+              {customQuestions.map((q, index) => (
+                <div className="d-flex align-items-center gap-2 mb-2" key={index}>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="e.g. Do you have your own vehicle?"
+                    value={q.questionText}
+                    onChange={(e) => updateCustomQuestion(index, "questionText", e.target.value)}
+                  />
+                  <div className="form-check text-nowrap">
+                    <input
+                      className="form-check-input"
+                      type="checkbox"
+                      id={`postCustomRequired-${index}`}
+                      checked={q.required}
+                      onChange={(e) => updateCustomQuestion(index, "required", e.target.checked)}
+                    />
+                    <label className="form-check-label small" htmlFor={`postCustomRequired-${index}`}>
+                      Required
+                    </label>
+                  </div>
+                  <div className="form-check text-nowrap">
+                    <input
+                      className="form-check-input"
+                      type="checkbox"
+                      id={`postCustomDoc-${index}`}
+                      checked={q.requiresDocument}
+                      onChange={(e) => updateCustomQuestion(index, "requiresDocument", e.target.checked)}
+                    />
+                    <label className="form-check-label small" htmlFor={`postCustomDoc-${index}`}>
+                      Needs document upload
+                    </label>
+                  </div>
+                  <button type="button" className="btn btn-sm btn-outline-danger" onClick={() => removeCustomQuestion(index)}>
+                    <FaTrashAlt />
+                  </button>
+                </div>
+              ))}
+            </div>
+
             <div className="col-12 mt-4">
               <button type="submit" className="btn btn-primary w-100 py-2 fw-bold" disabled={posting}>
                 {posting ? "Posting Job..." : "Post Job Opening"}
@@ -867,6 +966,56 @@ function ProviderDashboard() {
                   </div>
                 </div>
               </div>
+            </div>
+
+            <div className="col-12 mb-3">
+              <div className="d-flex justify-content-between align-items-center mb-2">
+                <label className="form-label fw-semibold mb-0">Your Own Custom Questions</label>
+                <button type="button" className="btn btn-sm btn-outline-primary" onClick={addEditCustomQuestion}>
+                  <FaPlusCircle className="me-1" /> Add Question
+                </button>
+              </div>
+              {editCustomQuestions.length === 0 && (
+                <p className="text-muted small mb-0">No custom questions added yet.</p>
+              )}
+              {editCustomQuestions.map((q, index) => (
+                <div className="d-flex align-items-center gap-2 mb-2" key={index}>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="e.g. Do you have your own vehicle?"
+                    value={q.questionText}
+                    onChange={(e) => updateEditCustomQuestion(index, "questionText", e.target.value)}
+                  />
+                  <div className="form-check text-nowrap">
+                    <input
+                      className="form-check-input"
+                      type="checkbox"
+                      id={`editCustomRequired-${index}`}
+                      checked={q.required}
+                      onChange={(e) => updateEditCustomQuestion(index, "required", e.target.checked)}
+                    />
+                    <label className="form-check-label small" htmlFor={`editCustomRequired-${index}`}>
+                      Required
+                    </label>
+                  </div>
+                  <div className="form-check text-nowrap">
+                    <input
+                      className="form-check-input"
+                      type="checkbox"
+                      id={`editCustomDoc-${index}`}
+                      checked={q.requiresDocument}
+                      onChange={(e) => updateEditCustomQuestion(index, "requiresDocument", e.target.checked)}
+                    />
+                    <label className="form-check-label small" htmlFor={`editCustomDoc-${index}`}>
+                      Needs document upload
+                    </label>
+                  </div>
+                  <button type="button" className="btn btn-sm btn-outline-danger" onClick={() => removeEditCustomQuestion(index)}>
+                    <FaTrashAlt />
+                  </button>
+                </div>
+              ))}
             </div>
 
             <div className="col-6 mt-4">
@@ -1042,18 +1191,23 @@ function ProviderDashboard() {
                       <td>
                         {app.answers && app.answers.length > 0 ? (
                           <div className="small">
-                            {app.answers.map((ans, idx) => (
-                              <div key={idx} className="mb-1">
-                                <strong className="text-secondary">{ans.questionText}:</strong>{" "}
-                                {ans.questionType === "resume" && ans.answer ? (
-                                  <a href={ans.answer} target="_blank" rel="noreferrer" className="text-primary text-decoration-none">
-                                    <FaFileAlt className="me-1" /> Submitted Resume
-                                  </a>
-                                ) : (
-                                  <span className="text-dark fw-medium">{ans.answer || "N/A"}</span>
-                                )}
-                              </div>
-                            ))}
+                            {app.answers.map((ans, idx) => {
+                              const matchingQuestion = selectedJob?.presetQuestions?.find((pq) => pq.id === ans.questionType);
+                              const looksLikeUrl = /^https?:\/\//i.test(ans.answer || "");
+                              const isDocumentAnswer = ans.questionType === "resume" || matchingQuestion?.answerType === "document" || looksLikeUrl;
+                              return (
+                                <div key={idx} className="mb-1">
+                                  <strong className="text-secondary">{ans.questionText}:</strong>{" "}
+                                  {isDocumentAnswer && ans.answer ? (
+                                    <a href={ans.answer} target="_blank" rel="noreferrer" className="text-primary text-decoration-none">
+                                      <FaFileAlt className="me-1" /> {ans.questionType === "resume" ? "Submitted Resume" : "Submitted Document"}
+                                    </a>
+                                  ) : (
+                                    <span className="text-dark fw-medium">{ans.answer || "N/A"}</span>
+                                  )}
+                                </div>
+                              );
+                            })}
                           </div>
                         ) : (
                           <span className="badge bg-light text-secondary border">Quick Apply</span>

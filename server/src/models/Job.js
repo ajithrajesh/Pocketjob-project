@@ -65,6 +65,7 @@ const jobSchema = new mongoose.Schema(
         id: { type: String, required: true },
         questionText: { type: String, required: true },
         required: { type: Boolean, default: false },
+        answerType: { type: String, enum: ["text", "document"], default: "text" },
       },
     ],
   },

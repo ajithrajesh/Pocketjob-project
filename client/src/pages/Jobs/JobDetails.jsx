@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation, Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import { getJobById, applyToJob, saveJob, unsaveJob, getSavedJobs, getMyAppliedJobs } from "../../services/jobService";
-import { uploadResume } from "../../services/userService";
+import { getJobById, applyToJob, saveJob, unsaveJob, getSavedJobs, getMyAppliedJobs, searchJobs } from "../../services/jobService";
+import { uploadResume, uploadDocument } from "../../services/userService";
 import { toast } from "react-toastify";
 import {
   FaArrowLeft,
@@ -14,12 +14,14 @@ import {
   FaBookmark,
   FaRegBookmark,
   FaCheckCircle,
-  FaSpinner
+  FaSpinner,
+  FaFileAlt
 } from "react-icons/fa";
 
 function JobDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { isAuthenticated, user } = useAuth();
 
   const [job, setJob] = useState(null);
@@ -28,11 +30,18 @@ function JobDetails() {
   const [existingAppDetails, setExistingAppDetails] = useState(null);
   const [isSaved, setIsSaved] = useState(false);
   const [showDetailedForm, setShowDetailedForm] = useState(false);
+  const [relatedJobs, setRelatedJobs] = useState([]);
+
+  // Are we viewing this inside the dashboard, or the public jobs page?
+  const isDashboardView = location.pathname.startsWith("/dashboard");
+  const jobLinkBase = isDashboardView ? "/dashboard/jobs" : "/jobs";
 
   // Detailed Apply answers state
   const [answers, setAnswers] = useState({});
   const [submittingApply, setSubmittingApply] = useState(false);
   const [uploadingResume, setUploadingResume] = useState(false);
+  const [uploadingDocIds, setUploadingDocIds] = useState({});
+  const [expandedAnswers, setExpandedAnswers] = useState({});
 
   useEffect(() => {
     const fetchJobData = async () => {
@@ -40,6 +49,19 @@ function JobDetails() {
         setLoading(true);
         const data = await getJobById(id);
         setJob(data.job);
+
+        // Fetch related jobs in the same category
+        if (data.job?.category) {
+          try {
+            const relatedData = await searchJobs({ category: data.job.category });
+            const filtered = (relatedData.jobs || [])
+              .filter((j) => j._id !== id)
+              .slice(0, 4);
+            setRelatedJobs(filtered);
+          } catch (relatedError) {
+            setRelatedJobs([]);
+          }
+        }
         
         if (isAuthenticated && user?.role === "user") {
           // Check application status
@@ -147,6 +169,26 @@ function JobDetails() {
       toast.error("Failed to upload resume");
     } finally {
       setUploadingResume(false);
+    }
+  };
+
+  const handleCustomDocumentUpload = async (e, qId) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    try {
+      setUploadingDocIds(prev => ({ ...prev, [qId]: true }));
+      const response = await uploadDocument(file);
+      if (response?.url) {
+        handleAnswerChange(qId, response.url);
+        toast.success("Document uploaded successfully!");
+      } else {
+        toast.error("Failed to retrieve uploaded document URL");
+      }
+    } catch (error) {
+      toast.error("Failed to upload document");
+    } finally {
+      setUploadingDocIds(prev => ({ ...prev, [qId]: false }));
     }
   };
 
@@ -371,14 +413,39 @@ function JobDetails() {
 
                     {/* Fallback for other custom ids */}
                     {q.id !== "experience" && q.id !== "relocate" && q.id !== "currentSalary" && q.id !== "expectedSalary" && q.id !== "resume" && (
-                      <input
-                        type="text"
-                        className="form-control bg-light"
-                        placeholder="Answer"
-                        value={answers[q.id] || ""}
-                        onChange={(e) => handleAnswerChange(q.id, e.target.value)}
-                        required={q.required}
-                      />
+                      q.answerType === "document" ? (
+                        <div className="mt-2">
+                          <div className="d-flex align-items-center gap-3">
+                            <input
+                              type="file"
+                              className="form-control bg-light"
+                              accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                              onChange={(e) => handleCustomDocumentUpload(e, q.id)}
+                              required={q.required && !answers[q.id]}
+                            />
+                            {uploadingDocIds[q.id] && (
+                              <span className="text-secondary small d-flex align-items-center">
+                                <FaSpinner className="spinner-border spinner-border-sm me-2 text-primary animate-spin" /> Uploading...
+                              </span>
+                            )}
+                            {answers[q.id] && !uploadingDocIds[q.id] && (
+                              <span className="text-success small fw-semibold d-flex align-items-center">
+                                <FaCheckCircle className="me-1" /> Document ready
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-muted small mt-1 mb-0">PDF, DOC, DOCX, JPG, or PNG files allowed.</p>
+                        </div>
+                      ) : (
+                        <input
+                          type="text"
+                          className="form-control bg-light"
+                          placeholder="Answer"
+                          value={answers[q.id] || ""}
+                          onChange={(e) => handleAnswerChange(q.id, e.target.value)}
+                          required={q.required}
+                        />
+                      )
                     )}
                   </div>
                 ))}
@@ -445,18 +512,41 @@ function JobDetails() {
                   {existingAppDetails?.answers && existingAppDetails.answers.length > 0 ? (
                     <div className="border rounded p-3 text-start bg-light">
                       <h6 className="fw-bold text-dark mb-2">Your Submitted Answers:</h6>
-                      {existingAppDetails.answers.map((ans, idx) => (
-                        <div key={idx} className="small mb-1">
-                          <strong className="text-secondary">{ans.questionText}:</strong>{" "}
-                          {ans.questionType === "resume" && ans.answer ? (
-                            <a href={ans.answer} target="_blank" rel="noreferrer" className="text-primary text-decoration-none fw-semibold">
-                              <FaFileAlt className="me-1" /> View Submitted Resume
-                            </a>
-                          ) : (
-                            <span className="text-dark fw-medium">{ans.answer || "N/A"}</span>
-                          )}
-                        </div>
-                      ))}
+                      {existingAppDetails.answers.map((ans, idx) => {
+                        const matchingQuestion = job.presetQuestions?.find((pq) => pq.id === ans.questionType);
+                        const looksLikeUrl = /^https?:\/\//i.test(ans.answer || "");
+                        const isDocumentAnswer = ans.questionType === "resume" || matchingQuestion?.answerType === "document" || looksLikeUrl;
+                        const answerText = ans.answer || "";
+                        const CHAR_LIMIT = 100;
+                        const isLong = !isDocumentAnswer && answerText.length > CHAR_LIMIT;
+                        const isExpanded = expandedAnswers[idx];
+                        const displayText = isLong && !isExpanded
+                          ? `${answerText.slice(0, CHAR_LIMIT)}...`
+                          : answerText;
+                        return (
+                          <div key={idx} className="small mb-1">
+                            <strong className="text-secondary">{ans.questionText}:</strong>{" "}
+                            {isDocumentAnswer && ans.answer ? (
+                              <a href={ans.answer} target="_blank" rel="noreferrer" className="text-primary text-decoration-none fw-semibold">
+                                <FaFileAlt className="me-1" /> View Submitted {ans.questionType === "resume" ? "Resume" : "Document"}
+                              </a>
+                            ) : (
+                              <span className="text-dark fw-medium">
+                                {displayText || "N/A"}
+                                {isLong && (
+                                  <button
+                                    type="button"
+                                    className="btn btn-link btn-sm p-0 ms-1 align-baseline"
+                                    onClick={() => setExpandedAnswers(prev => ({ ...prev, [idx]: !prev[idx] }))}
+                                  >
+                                    {isExpanded ? "Show less" : "Read more"}
+                                  </button>
+                                )}
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   ) : existingAppDetails ? (
                     <span className="badge bg-light text-secondary border">Applied via Quick Apply</span>
@@ -497,6 +587,35 @@ function JobDetails() {
           </div>
         </div>
       </div>
+
+      {/* Related Jobs Section */}
+      {relatedJobs.length > 0 && (
+        <div className="mt-5">
+          <h4 className="fw-bold text-dark mb-4">Related Jobs in {job.category}</h4>
+          <div className="row g-4">
+            {relatedJobs.map((rj) => (
+              <div className="col-md-6 col-lg-3" key={rj._id}>
+                <div className="card shadow-sm border-0 p-3 h-100 d-flex flex-column">
+                  <span className="badge bg-light text-primary fw-bold mb-2 border border-primary-subtle align-self-start">
+                    {rj.category}
+                  </span>
+                  <h6 className="fw-bold text-dark mb-1">{rj.title}</h6>
+                  <p className="text-muted small mb-2">🏢 {rj.companyName}</p>
+                  <div className="d-flex align-items-center text-secondary small mb-3">
+                    <FaMapMarkerAlt className="me-2 text-danger" />
+                    {rj.location?.city ? `${rj.location.city}, ${rj.location.state}` : "Remote"}
+                  </div>
+                  <div className="mt-auto">
+                    <Link to={`${jobLinkBase}/${rj._id}`} className="btn btn-outline-primary btn-sm w-100 fw-semibold">
+                      View Details
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

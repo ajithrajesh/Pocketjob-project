@@ -44,6 +44,7 @@ function AppRoutes() {
       {}
       <Route path="/dashboard" element={<DashboardLayout />}>
         <Route index element={<DashboardHome />} />
+        <Route path="jobs/:id" element={<JobDetails />} />
       </Route>
 
       {}

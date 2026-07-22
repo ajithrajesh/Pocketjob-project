@@ -7,6 +7,7 @@ import {
   uploadAadhaarBack,
   uploadLicense,
   uploadResume,
+  uploadDocument,
   getSeekers,
   getCompanies,
 } from "../controllers/userController.js";
@@ -53,6 +54,13 @@ router.put(
   protect,
   upload.single("resume"),
   uploadResume
+);
+
+router.post(
+  "/upload-document",
+  protect,
+  upload.single("document"),
+  uploadDocument
 );
 
 router.get("/seekers", protect, getSeekers);
