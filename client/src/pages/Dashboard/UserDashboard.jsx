@@ -848,18 +848,23 @@ function UserDashboard() {
                       <td>
                         {app.answers && app.answers.length > 0 ? (
                           <div className="small">
-                            {app.answers.map((ans, idx) => (
-                              <div key={idx} className="mb-1">
-                                <strong className="text-secondary">{ans.questionText}:</strong>{" "}
-                                {ans.questionType === "resume" && ans.answer ? (
-                                  <a href={ans.answer} target="_blank" rel="noreferrer" className="text-primary text-decoration-none">
-                                    <FaFileAlt className="me-1" /> Submitted Resume
-                                  </a>
-                                ) : (
-                                  <span className="text-dark fw-medium">{ans.answer || "N/A"}</span>
-                                )}
-                              </div>
-                            ))}
+                            {app.answers.map((ans, idx) => {
+                              const matchingQuestion = app.job?.presetQuestions?.find((pq) => pq.id === ans.questionType);
+                              const looksLikeUrl = /^https?:\/\//i.test(ans.answer || "");
+                              const isDocumentAnswer = ans.questionType === "resume" || matchingQuestion?.answerType === "document" || looksLikeUrl;
+                              return (
+                                <div key={idx} className="mb-1">
+                                  <strong className="text-secondary">{ans.questionText}:</strong>{" "}
+                                  {isDocumentAnswer && ans.answer ? (
+                                    <a href={ans.answer} target="_blank" rel="noreferrer" className="text-primary text-decoration-none">
+                                      <FaFileAlt className="me-1" /> {ans.questionType === "resume" ? "Submitted Resume" : "Submitted Document"}
+                                    </a>
+                                  ) : (
+                                    <span className="text-dark fw-medium">{ans.answer || "N/A"}</span>
+                                  )}
+                                </div>
+                              );
+                            })}
                           </div>
                         ) : (
                           <span className="badge bg-light text-secondary border">Quick Apply</span>

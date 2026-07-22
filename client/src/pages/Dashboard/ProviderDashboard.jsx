@@ -5,6 +5,7 @@ import { useAuth } from "../../context/AuthContext";
 import { postJob, getMyJobs, updateJob, deleteJob, getJobApplications, updateApplicationStatus } from "../../services/jobService";
 import { getJobSeekers, updateProfile } from "../../services/userService";
 import { getInvitations, sendInvitation } from "../../services/invitationService";
+import { createSubscriptionOrder, verifySubscriptionPayment } from "../../services/subscriptionService";
 import { 
   FaBuilding, FaPlusCircle, FaBriefcase, FaListAlt, 
   FaCalendarCheck, FaCreditCard, FaMapMarkerAlt, 
@@ -15,7 +16,7 @@ import {
 import LocationAutocomplete from "../../components/common/LocationAutocomplete";
 
 function ProviderDashboard() {
-  const { user } = useAuth();
+  const { user, updateCurrentUser } = useAuth();
   const [urlParams, setUrlParams] = useSearchParams();
   const activeTab = urlParams.get("tab") || "overview";
 
@@ -131,6 +132,129 @@ function ProviderDashboard() {
   const [selectedJob, setSelectedJob] = useState(null);
   const [applicants, setApplicants] = useState([]);
   const [loadingApplicants, setLoadingApplicants] = useState(false);
+
+  // Subscription plans state & logic
+  const [showPlansModal, setShowPlansModal] = useState(false);
+  const [upgradingPlan, setUpgradingPlan] = useState(false);
+
+  const loadRazorpayScript = () => {
+    return new Promise((resolve) => {
+      if (window.Razorpay) {
+        resolve(true);
+        return;
+      }
+      const script = document.createElement("script");
+      script.src = "https://checkout.razorpay.com/v1/checkout.js";
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
+  const handleUpgrade = async (plan) => {
+    try {
+      setUpgradingPlan(true);
+
+      const orderData = await createSubscriptionOrder(plan);
+      if (!orderData.success) {
+        toast.error("Failed to create subscription order.");
+        setUpgradingPlan(false);
+        return;
+      }
+
+      const { keyId, orderId, amount, currency, mockMode } = orderData;
+
+      if (mockMode) {
+        toast.info("Mock Mode: Simulating successful payment checkout...");
+        setTimeout(async () => {
+          try {
+            const verifyRes = await verifySubscriptionPayment({
+              razorpay_payment_id: `pay_mock_${Math.random().toString(36).substring(2, 9)}`,
+              razorpay_order_id: orderId,
+              razorpay_signature: "mock_signature",
+              plan: plan,
+            });
+
+            if (verifyRes.success) {
+              toast.success(`Successfully upgraded to ${plan.toUpperCase()} subscription!`);
+              updateCurrentUser(verifyRes.user);
+              setShowPlansModal(false);
+            } else {
+              toast.error(verifyRes.message || "Payment verification failed.");
+            }
+          } catch (err) {
+            toast.error(err.response?.data?.message || "Verification API error.");
+          } finally {
+            setUpgradingPlan(false);
+          }
+        }, 1500);
+        return;
+      }
+
+      const isLoaded = await loadRazorpayScript();
+      if (!isLoaded) {
+        toast.error("Failed to load Razorpay SDK. Please check your internet connection.");
+        setUpgradingPlan(false);
+        return;
+      }
+
+      const options = {
+        key: keyId,
+        amount: amount,
+        currency: currency,
+        name: "pocketJob Subscription",
+        description: `Upgrade to ${plan.charAt(0).toUpperCase() + plan.slice(1)} Plan`,
+        image: "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
+        order_id: orderId,
+        handler: async function (response) {
+          try {
+            setUpgradingPlan(true);
+            const verifyRes = await verifySubscriptionPayment({
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_signature: response.razorpay_signature,
+              plan: plan,
+            });
+
+            if (verifyRes.success) {
+              toast.success(`Successfully upgraded to ${plan.toUpperCase()} subscription!`);
+              updateCurrentUser(verifyRes.user);
+              setShowPlansModal(false);
+            } else {
+              toast.error(verifyRes.message || "Payment verification failed.");
+            }
+          } catch (err) {
+            toast.error(err.response?.data?.message || "Verification API error.");
+          } finally {
+            setUpgradingPlan(false);
+          }
+        },
+        prefill: {
+          name: user?.fullName || "",
+          email: user?.email || "",
+          contact: user?.phone || "",
+        },
+        notes: {
+          userId: user?._id,
+          plan: plan,
+        },
+        theme: {
+          color: "#0d6efd",
+        },
+        modal: {
+          ondismiss: function () {
+            setUpgradingPlan(false);
+          }
+        }
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.open();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to initiate payment.");
+      setUpgradingPlan(false);
+    }
+  };
 
   const categoriesList = [
     "Catering",
@@ -531,16 +655,32 @@ function ProviderDashboard() {
             <div className="card border-0 bg-white shadow-sm p-4 h-100">
               <h5 className="fw-bold mb-4 text-dark border-bottom pb-2 d-flex align-items-center">
                 <FaCreditCard className="text-success me-2" /> Subscription Plan
+                <button 
+                  className="btn btn-outline-primary btn-sm ms-auto fw-semibold"
+                  onClick={() => setShowPlansModal(true)}
+                >
+                  Change Plan
+                </button>
               </h5>
               <div className="p-3 bg-light border rounded mb-3">
                 <div className="d-flex justify-content-between align-items-center mb-2">
-                  <span className="badge bg-success text-white py-2 px-3 fw-bold">
-                    {user?.subscription?.plan?.toUpperCase()} TRIAL
+                  <span className={`badge ${user?.subscription?.plan === "premium" ? "bg-warning text-dark" : user?.subscription?.plan === "basic" ? "bg-primary text-white" : "bg-secondary text-white"} py-2 px-3 fw-bold`}>
+                    {user?.subscription?.plan?.toUpperCase() || "FREE"} PLAN
                   </span>
-                  <span className="badge bg-primary">ACTIVE</span>
+                  <span className={`badge ${user?.subscription?.status === "active" ? "bg-success text-white" : "bg-danger text-white"} py-1 px-2`}>
+                    {user?.subscription?.status?.toUpperCase() || "INACTIVE"}
+                  </span>
                 </div>
-                <h4 className="fw-bold text-dark mt-2">1 Month Free Plan</h4>
-                <p className="text-muted small mb-0">Full access to post part-time job openings.</p>
+                <h4 className="fw-bold text-dark mt-2">
+                  {user?.subscription?.plan === "premium" ? "Premium Plan" : user?.subscription?.plan === "basic" ? "Basic Plan" : "Free Trial Plan"}
+                </h4>
+                <p className="text-muted small mb-0">
+                  {user?.subscription?.plan === "premium" 
+                    ? "Unlimited job listings & priority seeker search." 
+                    : user?.subscription?.plan === "basic" 
+                    ? "Up to 10 job listings & access to applicant list." 
+                    : "Post single jobs & start seeking."}
+                </p>
               </div>
               <div className="row g-2 mb-3">
                 <div className="col-6">
@@ -558,7 +698,13 @@ function ProviderDashboard() {
               </div>
               <div className="alert alert-info py-2 d-flex align-items-center mb-0">
                 <FaCalendarCheck className="me-2 text-info fs-5" />
-                <span>You have <strong>{daysRemaining} days</strong> remaining in your free trial.</span>
+                <span>
+                  {user?.subscription?.plan === "free" ? (
+                    <>You have <strong>{daysRemaining} days</strong> remaining in your free trial.</>
+                  ) : (
+                    <>Your {user?.subscription?.plan?.toUpperCase()} plan has <strong>{daysRemaining} days</strong> remaining.</>
+                  )}
+                </span>
               </div>
             </div>
           </div>
@@ -1505,6 +1651,125 @@ function ProviderDashboard() {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Plans Modal */}
+      {showPlansModal && (
+        <div className="modal show d-block" tabIndex="-1" role="dialog" style={{ backgroundColor: "rgba(0,0,0,0.5)", zIndex: 1050 }}>
+          <div className="modal-dialog modal-lg modal-dialog-centered" role="document">
+            <div className="modal-content border-0 shadow-lg">
+              <div className="modal-header bg-primary text-white">
+                <h5 className="modal-title fw-bold">Upgrade Subscription Plan</h5>
+                <button 
+                  type="button" 
+                  className="btn-close btn-close-white" 
+                  onClick={() => setShowPlansModal(false)} 
+                  disabled={upgradingPlan}
+                  aria-label="Close"
+                ></button>
+              </div>
+              <div className="modal-body p-4 bg-light">
+                <p className="text-center mb-4 text-muted">
+                  Choose a subscription plan to unlock full potential of posting jobs and reaching candidates.
+                </p>
+                <div className="row g-4">
+                  {/* Free Plan Card */}
+                  <div className="col-md-4">
+                    <div className="card h-100 border-0 shadow-sm text-center p-3 position-relative">
+                      {user?.subscription?.plan === "free" && (
+                        <span className="badge bg-secondary position-absolute top-0 end-0 m-2">Current Plan</span>
+                      )}
+                      <div className="card-body d-flex flex-column justify-content-between">
+                        <div>
+                          <h6 className="text-uppercase text-secondary fw-bold mb-2">Free Trial</h6>
+                          <h3 className="fw-bold text-dark mb-3">₹0</h3>
+                          <ul className="list-unstyled text-start mb-4 text-muted small">
+                            <li className="mb-2">✓ Limited single job posts</li>
+                            <li className="mb-2">✓ Standard application views</li>
+                            <li className="mb-2">✗ No priority visibility</li>
+                            <li className="mb-2">✗ No advanced search</li>
+                          </ul>
+                        </div>
+                        <button 
+                          className="btn btn-outline-secondary w-100 mt-3" 
+                          disabled 
+                        >
+                          {user?.subscription?.plan === "free" ? "Active" : "Unavailable"}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Basic Plan Card */}
+                  <div className="col-md-4">
+                    <div className="card h-100 border-primary border-2 shadow text-center p-3 position-relative">
+                      {user?.subscription?.plan === "basic" && (
+                        <span className="badge bg-primary position-absolute top-0 end-0 m-2 text-white">Current Plan</span>
+                      )}
+                      <div className="card-body d-flex flex-column justify-content-between">
+                        <div>
+                          <h6 className="text-uppercase text-primary fw-bold mb-2">Basic</h6>
+                          <h3 className="fw-bold text-dark mb-3">₹499 <span className="fs-6 text-muted font-monospace">/mo</span></h3>
+                          <ul className="list-unstyled text-start mb-4 small">
+                            <li className="mb-2">✓ Post up to 10 active jobs</li>
+                            <li className="mb-2">✓ Detailed application list</li>
+                            <li className="mb-2">✓ Standard candidates search</li>
+                            <li className="mb-2">✗ Priority listing placement</li>
+                          </ul>
+                        </div>
+                        <button 
+                          className={`btn ${user?.subscription?.plan === "basic" ? "btn-secondary" : "btn-primary"} w-100 mt-3 fw-bold`} 
+                          onClick={() => handleUpgrade("basic")}
+                          disabled={user?.subscription?.plan === "basic" || user?.subscription?.plan === "premium" || upgradingPlan}
+                        >
+                          {upgradingPlan ? "Processing..." : user?.subscription?.plan === "basic" ? "Active" : user?.subscription?.plan === "premium" ? "Downgrade Restricted" : "Upgrade"}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Premium Plan Card */}
+                  <div className="col-md-4">
+                    <div className="card h-100 border-0 shadow-sm text-center p-3 position-relative bg-dark text-white">
+                      {user?.subscription?.plan === "premium" && (
+                        <span className="badge bg-warning text-dark position-absolute top-0 end-0 m-2">Current Plan</span>
+                      )}
+                      <div className="card-body d-flex flex-column justify-content-between">
+                        <div>
+                          <h6 className="text-uppercase text-warning fw-bold mb-2">Premium</h6>
+                          <h3 className="fw-bold text-warning mb-3">₹999 <span className="fs-6 text-light font-monospace">/mo</span></h3>
+                          <ul className="list-unstyled text-start mb-4 small text-light-emphasis">
+                            <li className="mb-2 text-white">✓ Post unlimited jobs</li>
+                            <li className="mb-2 text-white">✓ All applicants contact info</li>
+                            <li className="mb-2 text-white">✓ Priority placement in search</li>
+                            <li className="mb-2 text-white">✓ Advanced candidates filter</li>
+                          </ul>
+                        </div>
+                        <button 
+                          className={`btn ${user?.subscription?.plan === "premium" ? "btn-outline-warning" : "btn-warning"} w-100 mt-3 fw-bold text-dark`} 
+                          onClick={() => handleUpgrade("premium")}
+                          disabled={user?.subscription?.plan === "premium" || upgradingPlan}
+                        >
+                          {upgradingPlan ? "Processing..." : user?.subscription?.plan === "premium" ? "Active" : "Upgrade"}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="modal-footer bg-light">
+                <button 
+                  type="button" 
+                  className="btn btn-outline-secondary" 
+                  onClick={() => setShowPlansModal(false)}
+                  disabled={upgradingPlan}
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
         </div>
