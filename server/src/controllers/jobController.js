@@ -65,8 +65,8 @@ export const createJob = async (req, res) => {
 
 export const searchJobs = async (req, res) => {
   try {
-    const { category, location, keyword } = req.query;
-    const jobs = await searchJobsService({ category, location, keyword });
+    const { category, location, keyword, lat, lng, radius } = req.query;
+    const jobs = await searchJobsService({ category, location, keyword, lat, lng, radius });
 
     res.status(200).json({
       success: true,

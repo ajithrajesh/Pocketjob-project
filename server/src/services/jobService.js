@@ -1,5 +1,6 @@
 import Job from "../models/Job.js";
 import User from "../models/User.js";
+import { buildGeocodedLocation } from "../utils/geocode.js";
 
 export const createJobService = async (userId, jobData) => {
   const user = await User.findById(userId);
@@ -14,13 +15,20 @@ export const createJobService = async (userId, jobData) => {
     throw new Error("Title, Description, and Category are required");
   }
 
+  // Best-effort geocoding so the job can show up in "jobs near me" radius
+  // searches. If it fails, the job is still created with just the text
+  // location fields (city/district/state/pincode).
+  const geocodedLocation = await buildGeocodedLocation(
+    location || { state: "", district: "", city: "", pincode: "" }
+  );
+
   const job = await Job.create({
     title,
     company: userId,
     companyName: user.companyName || user.fullName,
     description,
     category,
-    location: location || { state: "", district: "", city: "", pincode: "" },
+    location: geocodedLocation,
     salary: salary || "",
     slots: slots || 1,
     date: date || "",
@@ -83,6 +91,43 @@ export const searchJobsService = async (filters) => {
     query.$and = andConditions;
   }
 
+  // Nearby search: if the seeker shared their coordinates and a radius
+  // (in km), restrict results to jobs whose geocoded location falls
+  // within that distance, sorted closest-first. Jobs without geocoded
+  // coordinates (geocoding failed or job predates this feature) are
+  // simply excluded from these results, same as any $geoNear query.
+  const latitude = parseFloat(filters.lat);
+  const longitude = parseFloat(filters.lng);
+  const radiusKm = parseFloat(filters.radius);
+
+  const hasValidCoords =
+    !Number.isNaN(latitude) &&
+    !Number.isNaN(longitude) &&
+    latitude >= -90 &&
+    latitude <= 90 &&
+    longitude >= -180 &&
+    longitude <= 180;
+
+  if (hasValidCoords && !Number.isNaN(radiusKm) && radiusKm > 0) {
+    const jobs = await Job.aggregate([
+      {
+        $geoNear: {
+          near: { type: "Point", coordinates: [longitude, latitude] },
+          distanceField: "distanceMeters",
+          maxDistance: radiusKm * 1000,
+          spherical: true,
+          query,
+        },
+      },
+      { $sort: { distanceMeters: 1 } },
+    ]);
+
+    return jobs.map((job) => ({
+      ...job,
+      distanceKm: Math.round((job.distanceMeters / 1000) * 10) / 10,
+    }));
+  }
+
   const jobs = await Job.find(query).sort({ createdAt: -1 });
   return jobs;
 };
@@ -135,7 +180,9 @@ export const updateJobService = async (jobId, userId, updateData) => {
   job.title = title || job.title;
   job.description = description || job.description;
   job.category = category || job.category;
-  job.location = location || job.location;
+  if (location) {
+    job.location = await buildGeocodedLocation(location);
+  }
   job.salary = salary !== undefined ? salary : job.salary;
   job.slots = slots !== undefined ? slots : job.slots;
   job.date = date !== undefined ? date : job.date;

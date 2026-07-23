@@ -42,6 +42,23 @@ const jobSchema = new mongoose.Schema(
         type: String,
         default: "",
       },
+      lat: {
+        type: Number,
+        default: null,
+      },
+      lng: {
+        type: Number,
+        default: null,
+      },
+      geo: {
+        type: {
+          type: String,
+          enum: ["Point"],
+        },
+        coordinates: {
+          type: [Number], // [lng, lat]
+        },
+      },
     },
     salary: {
       type: String,
@@ -81,6 +98,9 @@ jobSchema.index({
   "location.district": "text",
   "location.state": "text",
 });
+
+// Geospatial index used for "jobs near me" radius search
+jobSchema.index({ "location.geo": "2dsphere" });
 
 const Job = mongoose.model("Job", jobSchema);
 

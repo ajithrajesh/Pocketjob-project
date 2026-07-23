@@ -126,6 +126,8 @@ function ProviderDashboard() {
     district: "",
     city: "",
     pincode: "",
+    lat: "",
+    lng: "",
     requirements: "",
     askExperience: false,
     askRelocate: false,
@@ -134,6 +136,7 @@ function ProviderDashboard() {
     askResume: false,
   });
   const [posting, setPosting] = useState(false);
+  const [locatingJob, setLocatingJob] = useState(false);
   const [customQuestions, setCustomQuestions] = useState([]);
 
   // Edit Job State
@@ -149,6 +152,8 @@ function ProviderDashboard() {
     district: "",
     city: "",
     pincode: "",
+    lat: "",
+    lng: "",
     requirements: "",
     askExperience: false,
     askRelocate: false,
@@ -157,6 +162,7 @@ function ProviderDashboard() {
     askResume: false,
   });
   const [updating, setUpdating] = useState(false);
+  const [locatingEditJob, setLocatingEditJob] = useState(false);
   const [editCustomQuestions, setEditCustomQuestions] = useState([]);
 
   // Posted Jobs State
@@ -519,6 +525,57 @@ function ProviderDashboard() {
     setEditCustomQuestions(editCustomQuestions.filter((_, i) => i !== index));
   };
 
+  // Lets a provider pin the exact shift location using their device's GPS,
+  // instead of relying on the city/state text being auto-geocoded (which
+  // needs the server to reach an external geocoding API).
+  const handleUseLocationForPost = () => {
+    if (!navigator.geolocation) {
+      toast.error("Geolocation is not supported by your browser");
+      return;
+    }
+    setLocatingJob(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setFormData((prev) => ({
+          ...prev,
+          lat: position.coords.latitude.toFixed(6),
+          lng: position.coords.longitude.toFixed(6),
+        }));
+        setLocatingJob(false);
+        toast.success("Location captured for this job!");
+      },
+      () => {
+        setLocatingJob(false);
+        toast.error("Unable to get your location. Please allow location access or enter coordinates manually.");
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
+
+  const handleUseLocationForEdit = () => {
+    if (!navigator.geolocation) {
+      toast.error("Geolocation is not supported by your browser");
+      return;
+    }
+    setLocatingEditJob(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setEditFormData((prev) => ({
+          ...prev,
+          lat: position.coords.latitude.toFixed(6),
+          lng: position.coords.longitude.toFixed(6),
+        }));
+        setLocatingEditJob(false);
+        toast.success("Location updated for this job!");
+      },
+      () => {
+        setLocatingEditJob(false);
+        toast.error("Unable to get your location. Please allow location access or enter coordinates manually.");
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
+
   const handlePostJob = async (e) => {
     e.preventDefault();
     if (!formData.title || !formData.description || !formData.category) {
@@ -540,6 +597,8 @@ function ProviderDashboard() {
           district: formData.district,
           city: formData.city,
           pincode: formData.pincode,
+          lat: formData.lat,
+          lng: formData.lng,
         },
         requirements: formData.requirements ? formData.requirements.split(",").map((req) => req.trim()) : [],
         presetQuestions: buildPresetQuestions(formData, customQuestions),
@@ -558,6 +617,8 @@ function ProviderDashboard() {
         district: "",
         city: "",
         pincode: "",
+        lat: "",
+        lng: "",
         requirements: "",
         askExperience: false,
         askRelocate: false,
@@ -588,6 +649,8 @@ function ProviderDashboard() {
       district: job.location?.district || "",
       city: job.location?.city || "",
       pincode: job.location?.pincode || "",
+      lat: job.location?.lat != null ? String(job.location.lat) : "",
+      lng: job.location?.lng != null ? String(job.location.lng) : "",
       requirements: job.requirements ? job.requirements.join(", ") : "",
       askExperience: pQuestions.some((q) => q.id === "experience"),
       askRelocate: pQuestions.some((q) => q.id === "relocate"),
@@ -620,6 +683,8 @@ function ProviderDashboard() {
           district: editFormData.district,
           city: editFormData.city,
           pincode: editFormData.pincode,
+          lat: editFormData.lat,
+          lng: editFormData.lng,
         },
         requirements: editFormData.requirements ? editFormData.requirements.split(",").map((req) => req.trim()) : [],
         presetQuestions: buildPresetQuestions(editFormData, editCustomQuestions),
@@ -1010,6 +1075,46 @@ function ProviderDashboard() {
               <label className="form-label">Pincode</label>
               <input type="text" className="form-control" name="pincode" value={formData.pincode} onChange={handleChange} placeholder="e.g. 682024" />
             </div>
+            <div className="col-12">
+              <div className="d-flex flex-wrap align-items-center gap-3 bg-light border rounded p-3">
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline-primary"
+                  onClick={handleUseLocationForPost}
+                  disabled={locatingJob}
+                >
+                  <FaMapMarkerAlt className="me-1" />
+                  {locatingJob ? "Detecting location..." : "Pin My Current Location"}
+                </button>
+                <span className="text-muted small mb-0">or enter coordinates manually:</span>
+                <input
+                  type="number"
+                  step="any"
+                  className="form-control form-control-sm"
+                  style={{ maxWidth: "140px" }}
+                  name="lat"
+                  value={formData.lat}
+                  onChange={handleChange}
+                  placeholder="Latitude"
+                />
+                <input
+                  type="number"
+                  step="any"
+                  className="form-control form-control-sm"
+                  style={{ maxWidth: "140px" }}
+                  name="lng"
+                  value={formData.lng}
+                  onChange={handleChange}
+                  placeholder="Longitude"
+                />
+                {formData.lat && formData.lng && (
+                  <span className="badge bg-success">Location set ✓</span>
+                )}
+              </div>
+              <p className="text-muted small mt-1 mb-0">
+                Pinning a location lets job seekers find this shift with "jobs near me" distance search. Optional but recommended.
+              </p>
+            </div>
             <h5 className="fw-bold mt-4 mb-2 text-secondary border-bottom pb-2">Application Questionnaire (Detailed Apply)</h5>
             <p className="text-muted small mb-2">Select preset questions to require/prompt candidates during Detailed Apply:</p>
             <div className="col-12 border p-3 rounded bg-light mb-3">
@@ -1207,6 +1312,46 @@ function ProviderDashboard() {
             <div className="col-md-3">
               <label className="form-label">Pincode</label>
               <input type="text" className="form-control" name="pincode" value={editFormData.pincode} onChange={handleEditChange} />
+            </div>
+            <div className="col-12">
+              <div className="d-flex flex-wrap align-items-center gap-3 bg-light border rounded p-3">
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline-primary"
+                  onClick={handleUseLocationForEdit}
+                  disabled={locatingEditJob}
+                >
+                  <FaMapMarkerAlt className="me-1" />
+                  {locatingEditJob ? "Detecting location..." : "Pin My Current Location"}
+                </button>
+                <span className="text-muted small mb-0">or enter coordinates manually:</span>
+                <input
+                  type="number"
+                  step="any"
+                  className="form-control form-control-sm"
+                  style={{ maxWidth: "140px" }}
+                  name="lat"
+                  value={editFormData.lat}
+                  onChange={handleEditChange}
+                  placeholder="Latitude"
+                />
+                <input
+                  type="number"
+                  step="any"
+                  className="form-control form-control-sm"
+                  style={{ maxWidth: "140px" }}
+                  name="lng"
+                  value={editFormData.lng}
+                  onChange={handleEditChange}
+                  placeholder="Longitude"
+                />
+                {editFormData.lat && editFormData.lng && (
+                  <span className="badge bg-success">Location set ✓</span>
+                )}
+              </div>
+              <p className="text-muted small mt-1 mb-0">
+                Pinning a location lets job seekers find this shift with "jobs near me" distance search. Optional but recommended.
+              </p>
             </div>
             <h5 className="fw-bold mt-4 mb-2 text-secondary border-bottom pb-2">Application Questionnaire (Detailed Apply)</h5>
             <p className="text-muted small mb-2">Select preset questions to require/prompt candidates during Detailed Apply:</p>
