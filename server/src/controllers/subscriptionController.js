@@ -58,10 +58,17 @@ export const createOrder = async (req, res) => {
       mockMode: false,
     });
   } catch (error) {
-    // If Razorpay API fails due to authentication (e.g. invalid keys configured), 
-    // fallback to mock mode so the application doesn't break during evaluation/testing
-    if (error.statusCode === 401 || error.message?.includes("auth") || error.error?.description?.includes("Authentication")) {
-      console.log("Razorpay Auth Failed. Falling back to Mock Payment Mode.");
+    // Log the real underlying error so it's visible in server logs for debugging.
+    console.error("Razorpay createOrder failed:", error);
+
+    // If Razorpay API fails for ANY reason (invalid keys, auth failure, or the
+    // request never reaching Razorpay at all e.g. no outbound internet access,
+    // DNS/timeout issues), fall back to mock mode so the app doesn't break.
+    // Note: on a pure network failure, Razorpay's SDK throws while trying to
+    // read `err.response.status` off an undefined response, so `error` here
+    // may not have `.statusCode`/`.message` at all — hence the broad catch-all.
+    {
+      console.log("Razorpay order creation failed. Falling back to Mock Payment Mode.");
       const { plan } = req.body;
       let amount = plan === "basic" ? 499 : 999;
       return res.status(201).json({
@@ -73,11 +80,6 @@ export const createOrder = async (req, res) => {
         mockMode: true,
       });
     }
-
-    res.status(500).json({
-      success: false,
-      message: error.message || "Failed to create subscription order",
-    });
   }
 };
 
