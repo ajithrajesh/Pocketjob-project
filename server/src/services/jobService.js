@@ -33,6 +33,7 @@ export const createJobService = async (userId, jobData) => {
 
 export const searchJobsService = async (filters) => {
   const query = {};
+  const andConditions = [];
 
   if (filters.category) {
     query.category = { $regex: filters.category, $options: "i" };
@@ -40,13 +41,46 @@ export const searchJobsService = async (filters) => {
 
   if (filters.location) {
     const loc = filters.location.trim();
-    
-    query.$or = [
-      { "location.city": { $regex: loc, $options: "i" } },
-      { "location.district": { $regex: loc, $options: "i" } },
-      { "location.state": { $regex: loc, $options: "i" } },
-      { "location.pincode": { $regex: loc, $options: "i" } },
-    ];
+
+    andConditions.push({
+      $or: [
+        { "location.city": { $regex: loc, $options: "i" } },
+        { "location.district": { $regex: loc, $options: "i" } },
+        { "location.state": { $regex: loc, $options: "i" } },
+        { "location.pincode": { $regex: loc, $options: "i" } },
+      ],
+    });
+  }
+
+  // General keyword search: matches skills/requirements, job description,
+  // job title, salary, organisation name, category, or location — any
+  // free-text keyword the seeker types (e.g. "chef", "20000", "Kochi",
+  // "ABC Caterers"). Multiple words are treated as AND across words, OR
+  // across fields, so "delivery kochi" matches jobs that mention both
+  // "delivery" and "kochi" somewhere, not necessarily in the same field.
+  if (filters.keyword) {
+    const words = filters.keyword.trim().split(/\s+/).filter(Boolean);
+
+    words.forEach((word) => {
+      andConditions.push({
+        $or: [
+          { title: { $regex: word, $options: "i" } },
+          { description: { $regex: word, $options: "i" } },
+          { companyName: { $regex: word, $options: "i" } },
+          { category: { $regex: word, $options: "i" } },
+          { salary: { $regex: word, $options: "i" } },
+          { requirements: { $regex: word, $options: "i" } },
+          { "location.city": { $regex: word, $options: "i" } },
+          { "location.district": { $regex: word, $options: "i" } },
+          { "location.state": { $regex: word, $options: "i" } },
+          { "location.pincode": { $regex: word, $options: "i" } },
+        ],
+      });
+    });
+  }
+
+  if (andConditions.length > 0) {
+    query.$and = andConditions;
   }
 
   const jobs = await Job.find(query).sort({ createdAt: -1 });

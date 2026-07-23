@@ -13,6 +13,7 @@ function Jobs() {
 
   const [category, setCategory] = useState(searchParams.get("category") || "");
   const [location, setLocation] = useState(searchParams.get("location") || "");
+  const [keyword, setKeyword] = useState(searchParams.get("keyword") || "");
   const [jobsList, setJobsList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [appliedJobsStatus, setAppliedJobsStatus] = useState({});
@@ -47,19 +48,28 @@ function Jobs() {
     "Housekeeping",
     "Event Staff",
     "Valet Parking",
+    "Security",
+    "Retail",
+    "Construction",
+    "Office Staff",
+    "Animal Care",
+    "Landscaping",
+    "Hospitality",
   ];
 
   // URL parameters synchronization effect
   useEffect(() => {
     const urlCategory = searchParams.get("category") || "";
     const urlLocation = searchParams.get("location") || "";
+    const urlKeyword = searchParams.get("keyword") || "";
     setCategory(urlCategory);
     setLocation(urlLocation);
+    setKeyword(urlKeyword);
 
     const fetchJobs = async () => {
       try {
         setLoading(true);
-        const data = await searchJobs({ category: urlCategory, location: urlLocation });
+        const data = await searchJobs({ category: urlCategory, location: urlLocation, keyword: urlKeyword });
         setJobsList(data.jobs || []);
       } catch (error) {
         toast.error("Failed to load jobs");
@@ -73,7 +83,7 @@ function Jobs() {
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
-    setSearchParams({ category, location });
+    setSearchParams({ category, location, keyword });
   };
 
   const handleApply = async (jobId, jobTitle) => {
@@ -104,13 +114,29 @@ function Jobs() {
     <div className="container py-5" style={{ minHeight: "80vh" }}>
       {/* Search Header */}
       <div className="text-center mb-5">
-        <h2 className="fw-bold text-dark mb-2">Search Part-Time Shifts</h2>
-        <p className="text-muted">Find shift-based catering, warehousing, delivery, and driving jobs near you.</p>
+        <h2 className="fw-bold text-dark mb-2">Search Jobs Near You</h2>
+        <p className="text-muted">Browse part-time and full-time opportunities across every category, location, and skill set.</p>
       </div>
 
       {/* Search Panel */}
       <form onSubmit={handleSearchSubmit} className="row g-3 mb-5 p-4 bg-white shadow-sm rounded border border-light">
-        <div className="col-md-5">
+        <div className="col-md-4">
+          <label className="form-label fw-semibold text-secondary">Keyword</label>
+          <div className="input-group">
+            <span className="input-group-text bg-light border-end-0">
+              <FaSearch className="text-muted" />
+            </span>
+            <input
+              type="text"
+              className="form-control border-start-0 bg-light"
+              placeholder="Search by skill, salary, job title, or company..."
+              value={keyword}
+              onChange={(e) => setKeyword(e.target.value)}
+            />
+          </div>
+        </div>
+
+        <div className="col-md-3">
           <label className="form-label fw-semibold text-secondary">Job Category</label>
           <div className="input-group">
             <span className="input-group-text bg-light border-end-0">
@@ -122,7 +148,7 @@ function Jobs() {
               onChange={(e) => {
                 const selectedCat = e.target.value;
                 setCategory(selectedCat);
-                setSearchParams({ category: selectedCat, location });
+                setSearchParams({ category: selectedCat, location, keyword });
               }}
             >
               <option value="">All Categories</option>
@@ -133,7 +159,7 @@ function Jobs() {
           </div>
         </div>
 
-        <div className="col-md-5">
+        <div className="col-md-3">
           <label className="form-label fw-semibold text-secondary">Location</label>
           <div className="input-group">
             <span className="input-group-text bg-light border-end-0">
