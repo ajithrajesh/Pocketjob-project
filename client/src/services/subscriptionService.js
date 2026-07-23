@@ -9,3 +9,8 @@ export const verifySubscriptionPayment = async (paymentData) => {
   const response = await api.post("/subscriptions/verify-payment", paymentData);
   return response.data;
 };
+
+export const downgradeSubscription = async (plan) => {
+  const response = await api.post("/subscriptions/downgrade", { plan });
+  return response.data;
+};

@@ -5,7 +5,7 @@ import { useAuth } from "../../context/AuthContext";
 import { postJob, getMyJobs, updateJob, deleteJob, getJobApplications, updateApplicationStatus } from "../../services/jobService";
 import { getJobSeekers, updateProfile } from "../../services/userService";
 import { getInvitations, sendInvitation } from "../../services/invitationService";
-import { createSubscriptionOrder, verifySubscriptionPayment } from "../../services/subscriptionService";
+import { createSubscriptionOrder, verifySubscriptionPayment, downgradeSubscription } from "../../services/subscriptionService";
 import { 
   FaBuilding, FaPlusCircle, FaBriefcase, FaListAlt, 
   FaCalendarCheck, FaCreditCard, FaMapMarkerAlt, 
@@ -22,35 +22,89 @@ function ProviderDashboard() {
 
   const [emailSettings, setEmailSettings] = useState({
     presetEmail: user?.emailNotificationSettings?.presetEmail || "",
-    enableEmailNotifications: user?.emailNotificationSettings?.enableEmailNotifications !== false,
+    enableEmailNotifications: user?.emailNotificationSettings?.enableEmailNotifications === true,
     presetMailTemplate: user?.emailNotificationSettings?.presetMailTemplate || "You have a new activity update on your pocketJob provider account.",
   });
   const [savingSettings, setSavingSettings] = useState(false);
+
+  const [isEditingOrg, setIsEditingOrg] = useState(false);
+  const [orgFormData, setOrgFormData] = useState({
+    companyName: user?.companyName || "",
+    fullName: user?.fullName || "",
+    phone: user?.phone || "",
+  });
+  const [savingOrg, setSavingOrg] = useState(false);
+
+  const handleOrgChange = (e) => {
+    setOrgFormData({ ...orgFormData, [e.target.name]: e.target.value });
+  };
+
+  const handleSaveOrganisation = async (e) => {
+    e.preventDefault();
+    try {
+      setSavingOrg(true);
+      const response = await toast.promise(
+        updateProfile({
+          companyName: orgFormData.companyName,
+          fullName: orgFormData.fullName,
+          phone: orgFormData.phone,
+        }),
+        {
+          pending: "Saving organisation details...",
+          success: "Organisation details updated successfully!",
+          error: "Failed to update organisation details",
+        }
+      );
+      updateCurrentUser(response.user);
+      setIsEditingOrg(false);
+    } catch (error) {
+      // toast.promise already showed the error toast above
+    } finally {
+      setSavingOrg(false);
+    }
+  };
 
   useEffect(() => {
     if (user?.emailNotificationSettings) {
       setEmailSettings({
         presetEmail: user.emailNotificationSettings.presetEmail || "",
-        enableEmailNotifications: user.emailNotificationSettings.enableEmailNotifications !== false,
+        enableEmailNotifications: user.emailNotificationSettings.enableEmailNotifications === true,
         presetMailTemplate: user.emailNotificationSettings.presetMailTemplate || "You have a new activity update on your pocketJob provider account.",
       });
     }
   }, [user]);
 
+  useEffect(() => {
+    if (user && !isEditingOrg) {
+      setOrgFormData({
+        companyName: user.companyName || "",
+        fullName: user.fullName || "",
+        phone: user.phone || "",
+      });
+    }
+  }, [user, isEditingOrg]);
+
   const handleSaveEmailSettings = async (e) => {
     e.preventDefault();
     try {
       setSavingSettings(true);
-      await updateProfile({
-        emailNotificationSettings: {
-          presetEmail: emailSettings.presetEmail,
-          enableEmailNotifications: emailSettings.enableEmailNotifications,
-          presetMailTemplate: emailSettings.presetMailTemplate,
-        },
-      });
-      toast.success("Preset Email settings updated successfully!");
+      const response = await toast.promise(
+        updateProfile({
+          emailNotificationSettings: {
+            presetEmail: emailSettings.presetEmail,
+            enableEmailNotifications: emailSettings.enableEmailNotifications,
+            presetMailTemplate: emailSettings.presetMailTemplate,
+          },
+        }),
+        {
+          pending: "Saving preset email settings...",
+          success: "Preset Email settings updated successfully!",
+          error: "Failed to update email settings",
+        }
+      );
+      updateCurrentUser(response.user);
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to update email settings");
+      // toast.promise already showed the error toast above
     } finally {
       setSavingSettings(false);
     }
@@ -252,6 +306,30 @@ function ProviderDashboard() {
       rzp.open();
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to initiate payment.");
+      setUpgradingPlan(false);
+    }
+  };
+
+  const handleDowngrade = async (plan) => {
+    const confirmed = window.confirm(
+      `Are you sure you want to downgrade to the ${plan.toUpperCase()} plan? This takes effect immediately.`
+    );
+    if (!confirmed) return;
+
+    try {
+      setUpgradingPlan(true);
+      const res = await downgradeSubscription(plan);
+
+      if (res.success) {
+        toast.success(res.message || `Downgraded to ${plan.toUpperCase()} plan.`);
+        updateCurrentUser(res.user);
+        setShowPlansModal(false);
+      } else {
+        toast.error(res.message || "Failed to downgrade subscription.");
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to downgrade subscription.");
+    } finally {
       setUpgradingPlan(false);
     }
   };
@@ -625,29 +703,82 @@ function ProviderDashboard() {
         <div className="row g-4">
           <div className="col-md-6">
             <div className="card border-0 bg-white shadow-sm p-4 h-100">
-              <h5 className="fw-bold mb-4 text-dark border-bottom pb-2 d-flex align-items-center">
-                <FaBuilding className="text-primary me-2" /> Organisation Details
-              </h5>
-              <div className="mb-3">
-                <label className="text-muted small d-block">Organisation Name</label>
-                <span className="fw-bold text-dark fs-5">{user?.companyName || "N/A"}</span>
+              <div className="d-flex justify-content-between align-items-center mb-4 border-bottom pb-2">
+                <h5 className="fw-bold text-dark m-0 d-flex align-items-center">
+                  <FaBuilding className="text-primary me-2" /> Organisation Details
+                </h5>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline-primary"
+                  onClick={() => setIsEditingOrg(!isEditingOrg)}
+                >
+                  {isEditingOrg ? "Cancel" : "Edit"}
+                </button>
               </div>
-              <div className="mb-3">
-                <label className="text-muted small d-block">Organisation / Registration ID</label>
-                <span className="fw-semibold text-dark">{user?.organisationId || "N/A"}</span>
-              </div>
-              <div className="mb-3">
-                <label className="text-muted small d-block">Contact Representative</label>
-                <span className="fw-semibold text-dark">{user?.fullName}</span>
-              </div>
-              <div className="mb-3">
-                <label className="text-muted small d-block">Email Address</label>
-                <span className="text-dark">{user?.email}</span>
-              </div>
-              <div className="mb-0">
-                <label className="text-muted small d-block">Phone Number</label>
-                <span className="text-dark">{user?.phone}</span>
-              </div>
+
+              <form onSubmit={handleSaveOrganisation}>
+                <div className="mb-3">
+                  <label className="text-muted small d-block">Organisation Name</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    name="companyName"
+                    value={orgFormData.companyName}
+                    onChange={handleOrgChange}
+                    disabled={!isEditingOrg}
+                  />
+                </div>
+                <div className="mb-3">
+                  <label className="text-muted small d-block">Organisation / Registration ID</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={user?.organisationId || "N/A"}
+                    disabled
+                  />
+                </div>
+                <div className="mb-3">
+                  <label className="text-muted small d-block">Contact Representative</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    name="fullName"
+                    value={orgFormData.fullName}
+                    onChange={handleOrgChange}
+                    disabled={!isEditingOrg}
+                  />
+                </div>
+                <div className="mb-3">
+                  <label className="text-muted small d-block">Email Address</label>
+                  <input
+                    type="email"
+                    className="form-control"
+                    value={user?.email || ""}
+                    disabled
+                  />
+                </div>
+                <div className="mb-0">
+                  <label className="text-muted small d-block">Phone Number</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    name="phone"
+                    value={orgFormData.phone}
+                    onChange={handleOrgChange}
+                    disabled={!isEditingOrg}
+                  />
+                </div>
+
+                {isEditingOrg && (
+                  <button
+                    type="submit"
+                    className="btn btn-success w-100 py-2 mt-3"
+                    disabled={savingOrg}
+                  >
+                    {savingOrg ? "Saving..." : "Save Changes"}
+                  </button>
+                )}
+              </form>
             </div>
           </div>
 
@@ -1694,10 +1825,11 @@ function ProviderDashboard() {
                           </ul>
                         </div>
                         <button 
-                          className="btn btn-outline-secondary w-100 mt-3" 
-                          disabled 
+                          className={`btn ${user?.subscription?.plan === "free" ? "btn-outline-secondary" : "btn-outline-danger"} w-100 mt-3`}
+                          onClick={() => handleDowngrade("free")}
+                          disabled={user?.subscription?.plan === "free" || upgradingPlan}
                         >
-                          {user?.subscription?.plan === "free" ? "Active" : "Unavailable"}
+                          {upgradingPlan ? "Processing..." : user?.subscription?.plan === "free" ? "Active" : "Downgrade"}
                         </button>
                       </div>
                     </div>
@@ -1721,11 +1853,11 @@ function ProviderDashboard() {
                           </ul>
                         </div>
                         <button 
-                          className={`btn ${user?.subscription?.plan === "basic" ? "btn-secondary" : "btn-primary"} w-100 mt-3 fw-bold`} 
-                          onClick={() => handleUpgrade("basic")}
-                          disabled={user?.subscription?.plan === "basic" || user?.subscription?.plan === "premium" || upgradingPlan}
+                          className={`btn ${user?.subscription?.plan === "basic" ? "btn-secondary" : user?.subscription?.plan === "premium" ? "btn-outline-danger" : "btn-primary"} w-100 mt-3 fw-bold`} 
+                          onClick={() => user?.subscription?.plan === "premium" ? handleDowngrade("basic") : handleUpgrade("basic")}
+                          disabled={user?.subscription?.plan === "basic" || upgradingPlan}
                         >
-                          {upgradingPlan ? "Processing..." : user?.subscription?.plan === "basic" ? "Active" : user?.subscription?.plan === "premium" ? "Downgrade Restricted" : "Upgrade"}
+                          {upgradingPlan ? "Processing..." : user?.subscription?.plan === "basic" ? "Active" : user?.subscription?.plan === "premium" ? "Downgrade" : "Upgrade"}
                         </button>
                       </div>
                     </div>

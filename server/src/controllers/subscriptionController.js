@@ -83,6 +83,76 @@ export const createOrder = async (req, res) => {
   }
 };
 
+const PLAN_RANK = { free: 0, basic: 1, premium: 2 };
+
+export const downgradeSubscription = async (req, res) => {
+  try {
+    const { plan } = req.body;
+
+    if (!plan || !["free", "basic"].includes(plan)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid downgrade plan selected.",
+      });
+    }
+
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found.",
+      });
+    }
+
+    const currentPlan = user.subscription?.plan || "free";
+
+    if (PLAN_RANK[plan] >= PLAN_RANK[currentPlan]) {
+      return res.status(400).json({
+        success: false,
+        message: `You're already on the ${currentPlan.toUpperCase()} plan or lower.`,
+      });
+    }
+
+    if (plan === "free") {
+      user.subscription = {
+        plan: "free",
+        status: "active",
+        startDate: null,
+        endDate: null,
+      };
+    } else {
+      // Downgrading premium -> basic: keep the existing paid cycle if still
+      // active, otherwise start a fresh 30-day basic cycle.
+      const stillActive =
+        user.subscription?.endDate && new Date(user.subscription.endDate) > new Date();
+
+      const endDate = stillActive ? user.subscription.endDate : new Date();
+      if (!stillActive) endDate.setDate(endDate.getDate() + 30);
+
+      user.subscription = {
+        plan: "basic",
+        status: "active",
+        startDate: stillActive ? user.subscription.startDate : new Date(),
+        endDate,
+      };
+    }
+
+    await user.save();
+    user.password = undefined;
+
+    res.status(200).json({
+      success: true,
+      message: `Subscription downgraded to ${plan.toUpperCase()} successfully.`,
+      user,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message || "Failed to downgrade subscription",
+    });
+  }
+};
+
 export const verifyPayment = async (req, res) => {
   try {
     const { razorpay_payment_id, razorpay_order_id, razorpay_signature, plan } = req.body;
