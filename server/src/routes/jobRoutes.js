@@ -19,10 +19,10 @@ import { protect } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// Public routes
+
 router.get("/search", searchJobs);
 
-// Protected routes
+
 router.post("/", protect, createJob);
 router.get("/recommended", protect, getRecommendedJobs);
 router.get("/my-jobs", protect, getMyJobs);

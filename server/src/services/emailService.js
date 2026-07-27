@@ -17,7 +17,7 @@ const getTransporter = async () => {
       },
     });
   } else {
-    // Development fallback using Ethereal test SMTP or mock logger
+  
     try {
       const testAccount = await nodemailer.createTestAccount();
       transporter = nodemailer.createTransport({
@@ -48,9 +48,7 @@ const getTransporter = async () => {
   return transporter;
 };
 
-/**
- * Send Preset Email Notification to Gmail inbox
- */
+
 export const sendPresetEmail = async ({
   to,
   subject,

@@ -44,9 +44,36 @@ function UserDashboard() {
   }, [authUser]);
   
   // Job Search State
-  const [searchParams, setSearchParams] = useState({ category: "", location: "" });
+  const [searchParams, setSearchParams] = useState({ category: "", location: "", keyword: "" });
   const [jobs, setJobs] = useState([]);
   const [loadingJobs, setLoadingJobs] = useState(false);
+
+  // "Jobs near me" state — geolocate the seeker, then filter/sort by
+  // distance within the chosen radius.
+  const [nearMe, setNearMe] = useState(false);
+  const [coords, setCoords] = useState(null);
+  const [radius, setRadius] = useState("10");
+  const [locating, setLocating] = useState(false);
+
+  const handleUseMyLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error("Geolocation is not supported by your browser");
+      return;
+    }
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setCoords({ lat: position.coords.latitude, lng: position.coords.longitude });
+        setNearMe(true);
+        setLocating(false);
+      },
+      () => {
+        setLocating(false);
+        toast.error("Unable to get your location. Please allow location access and try again.");
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
 
   // Recommended Jobs State
   const [recommendedJobs, setRecommendedJobs] = useState([]);
@@ -74,6 +101,7 @@ function UserDashboard() {
     district: "",
     city: "",
     pincode: "",
+    preferredCategories: [],
     presetEmail: "",
     enableEmailNotifications: true,
     presetMailTemplate: "You have a new activity update on your pocketJob account.",
@@ -111,6 +139,7 @@ function UserDashboard() {
         district: data.user.address?.district || "",
         city: data.user.address?.city || "",
         pincode: data.user.address?.pincode || "",
+        preferredCategories: data.user.preferredCategories || [],
         presetEmail: data.user.emailNotificationSettings?.presetEmail || "",
         enableEmailNotifications: data.user.emailNotificationSettings?.enableEmailNotifications !== false,
         presetMailTemplate: data.user.emailNotificationSettings?.presetMailTemplate || "You have a new activity update on your pocketJob account.",
@@ -124,7 +153,13 @@ function UserDashboard() {
   const fetchJobs = async () => {
     try {
       setLoadingJobs(true);
-      const data = await searchJobs(searchParams);
+      const params = { ...searchParams };
+      if (nearMe && coords) {
+        params.lat = coords.lat;
+        params.lng = coords.lng;
+        params.radius = radius;
+      }
+      const data = await searchJobs(params);
       setJobs(data.jobs || []);
     } catch (error) {
       toast.error("Error searching jobs");
@@ -184,7 +219,7 @@ function UserDashboard() {
 
   useEffect(() => {
     fetchJobs();
-  }, [searchParams.category]);
+  }, [searchParams.category, nearMe, coords, radius]);
 
   useEffect(() => {
     if (activeTab === "recommended") {
@@ -263,6 +298,19 @@ function UserDashboard() {
     setFormData({ ...formData, [e.target.name]: value });
   };
 
+  const handleTogglePreferredCategory = (category) => {
+    setFormData((prev) => {
+      const current = prev.preferredCategories || [];
+      const isSelected = current.includes(category);
+      return {
+        ...prev,
+        preferredCategories: isSelected
+          ? current.filter((c) => c !== category)
+          : [...current, category],
+      };
+    });
+  };
+
   const handleProfileUpdate = async (e) => {
     e.preventDefault();
     try {
@@ -277,6 +325,7 @@ function UserDashboard() {
           city: formData.city,
           pincode: formData.pincode,
         },
+        preferredCategories: formData.preferredCategories,
         emailNotificationSettings: {
           presetEmail: formData.presetEmail,
           enableEmailNotifications: formData.enableEmailNotifications,
@@ -330,6 +379,16 @@ function UserDashboard() {
         <div>
           <h4 className="fw-bold mb-3 text-dark">Find Part-Time Jobs</h4>
           <form onSubmit={handleSearch} className="row g-3 mb-4 bg-light p-3 rounded">
+            <div className="col-md-12">
+              <label className="form-label text-muted small">Keyword</label>
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Search by job title, company name, skill, salary, or requirements..."
+                value={searchParams.keyword}
+                onChange={(e) => setSearchParams({ ...searchParams, keyword: e.target.value })}
+              />
+            </div>
             <div className="col-md-5">
               <label className="form-label text-muted small">Category</label>
               <select
@@ -356,6 +415,44 @@ function UserDashboard() {
               <button type="submit" className="btn btn-primary w-100 py-2 d-flex align-items-center justify-content-center">
                 <FaSearch className="me-2" /> Search
               </button>
+            </div>
+
+            <div className="col-12 d-flex flex-wrap align-items-center gap-3 pt-2 border-top mt-2">
+              <button
+                type="button"
+                className={`btn btn-sm ${nearMe ? "btn-success" : "btn-outline-secondary"}`}
+                onClick={coords ? () => setNearMe((v) => !v) : handleUseMyLocation}
+                disabled={locating}
+              >
+                <FaMapMarkerAlt className="me-1" />
+                {locating ? "Detecting location..." : nearMe ? "Near Me: On" : "Search Near Me"}
+              </button>
+
+              {coords && (
+                <>
+                  <label className="mb-0 small text-muted">Within</label>
+                  <select
+                    className="form-select form-select-sm w-auto"
+                    value={radius}
+                    onChange={(e) => setRadius(e.target.value)}
+                    disabled={!nearMe}
+                  >
+                    <option value="5">5 km</option>
+                    <option value="10">10 km</option>
+                    <option value="20">20 km</option>
+                    <option value="50">50 km</option>
+                    <option value="100">100 km</option>
+                  </select>
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-link text-decoration-none"
+                    onClick={handleUseMyLocation}
+                    disabled={locating}
+                  >
+                    Refresh location
+                  </button>
+                </>
+              )}
             </div>
           </form>
 
@@ -384,6 +481,9 @@ function UserDashboard() {
                         <span className="text-muted small d-flex align-items-center">
                           <FaMapMarkerAlt className="me-1 text-danger" /> 
                           {job.location?.city ? `${job.location.city}, ${job.location.state}` : "Remote"}
+                          {typeof job.distanceKm === "number" && (
+                            <span className="badge bg-info text-dark ms-2">{job.distanceKm} km away</span>
+                          )}
                         </span>
                         <span className="text-success small fw-bold">💰 {job.salary || "Not Specified"}</span>
                       </div>
@@ -599,6 +699,32 @@ function UserDashboard() {
                       onChange={handleProfileChange}
                       disabled={!isEditing}
                     />
+                  </div>
+                </div>
+
+                <div className="mt-4 pt-3 border-top">
+                  <h6 className="fw-bold text-secondary mb-1">Preferred Job Categories</h6>
+                  <p className="text-muted small mb-3">
+                    Used for your "Recommended Jobs" tab and new-job notifications — select the categories you're interested in.
+                  </p>
+                  <div className="row">
+                    {categoriesList.map((cat) => (
+                      <div className="col-md-4 col-6 mb-2" key={cat}>
+                        <div className="form-check">
+                          <input
+                            className="form-check-input"
+                            type="checkbox"
+                            id={`preferredCategory-${cat}`}
+                            checked={formData.preferredCategories?.includes(cat) || false}
+                            onChange={() => handleTogglePreferredCategory(cat)}
+                            disabled={!isEditing}
+                          />
+                          <label className="form-check-label" htmlFor={`preferredCategory-${cat}`}>
+                            {cat}
+                          </label>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
 

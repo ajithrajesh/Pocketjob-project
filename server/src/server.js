@@ -47,7 +47,7 @@ const startServer = async () => {
       });
     });
 
-    // Store socket instances in the express app
+   
     app.set("io", io);
     app.set("userSockets", userSockets);
 

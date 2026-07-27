@@ -65,8 +65,8 @@ export const createJob = async (req, res) => {
 
 export const searchJobs = async (req, res) => {
   try {
-    const { category, location, keyword } = req.query;
-    const jobs = await searchJobsService({ category, location, keyword });
+    const { category, location, keyword, lat, lng, radius } = req.query;
+    const jobs = await searchJobsService({ category, location, keyword, lat, lng, radius });
 
     res.status(200).json({
       success: true,
@@ -147,7 +147,7 @@ export const applyJob = async (req, res) => {
   try {
     const app = await applyJobService(req.params.id, req.user._id, req.body.answers);
 
-    // Notify company of new applicant
+  
     if (app && app.job) {
       createAndSendNotification({
         recipientId: app.job.company || app.job,
@@ -213,7 +213,7 @@ export const updateApplicationStatus = async (req, res) => {
       status
     );
 
-    // Send notification & email to candidate
+   
     if (application && application.seeker) {
       const isAccepted = status === "accepted";
       const title = isAccepted ? "Application Accepted 🎉" : "Application Decision Update";

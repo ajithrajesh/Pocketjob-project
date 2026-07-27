@@ -4,7 +4,7 @@ import User from "../models/User.js";
 import Application from "../models/Application.js";
 
 export const sendInvitationService = async (companyId, jobId, seekerId) => {
-  // 1. Verify job exists and belongs to this company
+  
   const job = await Job.findById(jobId);
   if (!job) {
     throw new Error("Job listing not found");
@@ -13,13 +13,13 @@ export const sendInvitationService = async (companyId, jobId, seekerId) => {
     throw new Error("You are not authorized to send invitations for this job");
   }
 
-  // 2. Verify seeker exists and has role "user"
+  
   const seeker = await User.findById(seekerId);
   if (!seeker || seeker.role !== "user") {
     throw new Error("Selected user is not a job seeker");
   }
 
-  // 3. Check for existing invitation
+  
   const existingInvitation = await Invitation.findOne({ job: jobId, seeker: seekerId });
   if (existingInvitation) {
     throw new Error("You have already invited this job seeker to this job");
@@ -71,7 +71,7 @@ export const updateInvitationStatusService = async (invitationId, userId, status
     throw new Error("Invitation not found");
   }
 
-  // Check if current user is the seeker of the invitation
+  
   if (invitation.seeker.toString() !== userId.toString()) {
     throw new Error("You are not authorized to update this invitation");
   }
@@ -79,7 +79,7 @@ export const updateInvitationStatusService = async (invitationId, userId, status
   invitation.status = status;
   await invitation.save();
 
-  // If accepted, automatically create an Application entry with status 'accepted'
+  
   if (status === "accepted") {
     const existingApp = await Application.findOne({
       job: invitation.job._id,

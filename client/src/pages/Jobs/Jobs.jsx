@@ -18,6 +18,34 @@ function Jobs() {
   const [loading, setLoading] = useState(false);
   const [appliedJobsStatus, setAppliedJobsStatus] = useState({});
 
+  // "Jobs near me" state — uses the browser's geolocation to fetch the
+  // seeker's coordinates, then asks the backend for jobs within the
+  // chosen radius (sorted closest first).
+  const [nearMe, setNearMe] = useState(false);
+  const [coords, setCoords] = useState(null);
+  const [radius, setRadius] = useState("10");
+  const [locating, setLocating] = useState(false);
+
+  const handleUseMyLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error("Geolocation is not supported by your browser");
+      return;
+    }
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setCoords({ lat: position.coords.latitude, lng: position.coords.longitude });
+        setNearMe(true);
+        setLocating(false);
+      },
+      () => {
+        setLocating(false);
+        toast.error("Unable to get your location. Please allow location access and try again.");
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
+
   // Fetch applied jobs if logged in as user
   useEffect(() => {
     const fetchApplied = async () => {
@@ -69,7 +97,13 @@ function Jobs() {
     const fetchJobs = async () => {
       try {
         setLoading(true);
-        const data = await searchJobs({ category: urlCategory, location: urlLocation, keyword: urlKeyword });
+        const params = { category: urlCategory, location: urlLocation, keyword: urlKeyword };
+        if (nearMe && coords) {
+          params.lat = coords.lat;
+          params.lng = coords.lng;
+          params.radius = radius;
+        }
+        const data = await searchJobs(params);
         setJobsList(data.jobs || []);
       } catch (error) {
         toast.error("Failed to load jobs");
@@ -79,7 +113,7 @@ function Jobs() {
     };
 
     fetchJobs();
-  }, [searchParams]);
+  }, [searchParams, nearMe, coords, radius]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -179,6 +213,44 @@ function Jobs() {
             <FaSearch className="me-2" /> Search
           </button>
         </div>
+
+        <div className="col-12 d-flex flex-wrap align-items-center gap-3 pt-2 border-top mt-2">
+          <button
+            type="button"
+            className={`btn btn-sm ${nearMe ? "btn-success" : "btn-outline-secondary"}`}
+            onClick={coords ? () => setNearMe((v) => !v) : handleUseMyLocation}
+            disabled={locating}
+          >
+            <FaMapMarkerAlt className="me-1" />
+            {locating ? "Detecting location..." : nearMe ? "Near Me: On" : "Search Near Me"}
+          </button>
+
+          {coords && (
+            <>
+              <label className="mb-0 small text-muted">Within</label>
+              <select
+                className="form-select form-select-sm w-auto"
+                value={radius}
+                onChange={(e) => setRadius(e.target.value)}
+                disabled={!nearMe}
+              >
+                <option value="5">5 km</option>
+                <option value="10">10 km</option>
+                <option value="20">20 km</option>
+                <option value="50">50 km</option>
+                <option value="100">100 km</option>
+              </select>
+              <button
+                type="button"
+                className="btn btn-sm btn-link text-decoration-none"
+                onClick={handleUseMyLocation}
+                disabled={locating}
+              >
+                Refresh location
+              </button>
+            </>
+          )}
+        </div>
       </form>
 
       {/* Jobs Grid */}
@@ -216,6 +288,9 @@ function Jobs() {
                       <div className="d-flex align-items-center mb-2 text-muted small">
                         <FaMapMarkerAlt className="me-2 text-danger" />
                         <span>{job.location?.city ? `${job.location.city}, ${job.location.state}` : "Remote"}</span>
+                        {typeof job.distanceKm === "number" && (
+                          <span className="badge bg-info text-dark ms-2">{job.distanceKm} km away</span>
+                        )}
                       </div>
                       <div className="d-flex align-items-center mb-2 text-muted small">
                         <FaMoneyBillWave className="me-2 text-success" />

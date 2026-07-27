@@ -2,9 +2,7 @@ import Notification from "../models/Notification.js";
 import User from "../models/User.js";
 import { sendPresetEmail } from "./emailService.js";
 
-/**
- * Creates an in-app notification, emits Socket.io event, and sends preset email.
- */
+
 export const createAndSendNotification = async ({
   recipientId,
   senderId = null,
@@ -22,7 +20,6 @@ export const createAndSendNotification = async ({
       return null;
     }
 
-    // 1. Create DB Notification
     const notification = await Notification.create({
       recipient: recipientId,
       sender: senderId,
@@ -33,7 +30,7 @@ export const createAndSendNotification = async ({
       data,
     });
 
-    // 2. Real-time Socket.io Notification
+    
     if (app) {
       const io = app.get("io");
       const userSockets = app.get("userSockets");
@@ -59,19 +56,19 @@ export const createAndSendNotification = async ({
       }
     }
 
-    // 3. Preset Mail Notification
+    
     const emailSettings = recipient.emailNotificationSettings || {};
     const enableEmail = emailSettings.enableEmailNotifications !== false;
 
     if (enableEmail) {
-      // Use preset email if provided, otherwise fallback to account email
+     
       const targetEmail = (emailSettings.presetEmail && emailSettings.presetEmail.trim())
         ? emailSettings.presetEmail.trim()
         : recipient.email;
 
       const presetTemplate = emailSettings.presetMailTemplate || "";
 
-      // Fire email sending asynchronously
+      
       sendPresetEmail({
         to: targetEmail,
         subject: title,
@@ -108,9 +105,7 @@ export const getUserNotifications = async (userId) => {
   return { notifications, unreadCount };
 };
 
-/**
- * Mark a single notification as read
- */
+
 export const markNotificationAsRead = async (notificationId, userId) => {
   const notification = await Notification.findOneAndUpdate(
     { _id: notificationId, recipient: userId },
@@ -120,9 +115,7 @@ export const markNotificationAsRead = async (notificationId, userId) => {
   return notification;
 };
 
-/**
- * Mark all notifications for a user as read
- */
+
 export const markAllNotificationsAsRead = async (userId) => {
   await Notification.updateMany(
     { recipient: userId, isRead: false },
@@ -131,9 +124,7 @@ export const markAllNotificationsAsRead = async (userId) => {
   return { success: true };
 };
 
-/**
- * Delete a notification
- */
+
 export const deleteNotification = async (notificationId, userId) => {
   await Notification.findOneAndDelete({ _id: notificationId, recipient: userId });
   return { success: true };
