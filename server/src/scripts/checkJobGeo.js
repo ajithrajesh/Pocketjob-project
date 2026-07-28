@@ -1,4 +1,7 @@
-
+// Diagnostic script — run from server/ directory:
+//   node ../checkJobGeo.js   (adjust path to wherever you put this)
+// or copy it into server/src/scripts/checkJobGeo.js and run:
+//   node src/scripts/checkJobGeo.js
 
 import dotenv from "dotenv";
 import mongoose from "mongoose";

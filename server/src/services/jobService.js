@@ -15,7 +15,9 @@ export const createJobService = async (userId, jobData) => {
     throw new Error("Title, Description, and Category are required");
   }
 
-  
+  // Best-effort geocoding so the job can show up in "jobs near me" radius
+  // searches. If it fails, the job is still created with just the text
+  // location fields (city/district/state/pincode).
   const geocodedLocation = await buildGeocodedLocation(
     location || { state: "", district: "", city: "", pincode: "" }
   );

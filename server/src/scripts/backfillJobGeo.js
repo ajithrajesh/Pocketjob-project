@@ -1,4 +1,13 @@
-
+// One-time backfill: geocodes every existing job that doesn't yet have
+// coordinates, so "jobs near me" radius search works for jobs posted
+// before this feature existed.
+//
+// Usage (from the server/ directory):
+//   node src/scripts/backfillJobGeo.js
+//
+// Safe to re-run — it only touches jobs missing location.geo, and skips
+// jobs whose address text can't be resolved (they're logged so you can
+// follow up manually, e.g. by asking the poster to re-save the job).
 
 import dotenv from "dotenv";
 import mongoose from "mongoose";
@@ -8,7 +17,7 @@ import { geocodeLocation } from "../utils/geocode.js";
 
 dotenv.config();
 
-
+// Nominatim's usage policy asks for at most ~1 request/second.
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const run = async () => {
@@ -54,4 +63,4 @@ const run = async () => {
 run().catch((error) => {
   console.error("Backfill failed:", error);
   process.exit(1);
-});
+});git add server/src/scripts/backfillJobGeo.js
