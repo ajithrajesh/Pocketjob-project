@@ -10,7 +10,7 @@ function DashboardLayout() {
   const { user, isAuthenticated, loading, logout } = useAuth();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const defaultTab = user?.role === "company" ? "overview" : "search";
+  const defaultTab = user?.role === "company" || user?.role === "admin" ? "overview" : "search";
   const currentTab = searchParams.get("tab") || defaultTab;
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [socket, setSocket] = useState(null);
@@ -220,6 +220,36 @@ function DashboardLayout() {
                       className={`nav-link d-flex align-items-start sidebar-nav-link ${currentTab === "seekers" ? "active" : ""}`}
                     >
                       <FaUsers className="me-2" /> Search Seeker
+                    </Link>
+                  </li>
+                </>
+              ) : user?.role === "admin" ? (
+                <>
+                  <li className="nav-item">
+                    <Link
+                      to="/dashboard?tab=overview"
+                      onClick={() => setSidebarOpen(false)}
+                      className={`nav-link d-flex align-items-start sidebar-nav-link ${currentTab === "overview" ? "active" : ""}`}
+                    >
+                      <FaTachometerAlt className="me-2" /> Overview
+                    </Link>
+                  </li>
+                  <li className="nav-item">
+                    <Link
+                      to="/dashboard?tab=users"
+                      onClick={() => setSidebarOpen(false)}
+                      className={`nav-link d-flex align-items-start sidebar-nav-link ${currentTab === "users" ? "active" : ""}`}
+                    >
+                      <FaUsers className="me-2" /> Manage Users
+                    </Link>
+                  </li>
+                  <li className="nav-item">
+                    <Link
+                      to="/dashboard?tab=jobs"
+                      onClick={() => setSidebarOpen(false)}
+                      className={`nav-link d-flex align-items-start sidebar-nav-link ${currentTab === "jobs" ? "active" : ""}`}
+                    >
+                      <FaBriefcase className="me-2" /> Manage Jobs
                     </Link>
                   </li>
                 </>

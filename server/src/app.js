@@ -10,6 +10,7 @@ import jobRoutes from "./routes/jobRoutes.js";
 import invitationRoutes from "./routes/invitationRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 import subscriptionRoutes from "./routes/subscriptionRoutes.js";
+import adminRoutes from "./routes/adminRoutes.js";
 
 import notFoundMiddleware from "./middleware/notFoundMiddleware.js";
 import errorMiddleware from "./middleware/errorMiddleware.js";
@@ -40,6 +41,7 @@ app.use("/api/jobs", jobRoutes);
 app.use("/api/invitations", invitationRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/subscriptions", subscriptionRoutes);
+app.use("/api/admin", adminRoutes);
 
 
 app.use(notFoundMiddleware);
