@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
-    "backfill:geo": "node src/scripts/backfillJobGeo.js"
+    "backfill:geo": "node src/scripts/backfillJobGeo.js",
+    "check:subscriptions": "node src/scripts/runSubscriptionExpiryCheck.js"
   },
   "keywords": [],
   "author": "",
@@ -24,6 +25,7 @@
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.7.3",
     "morgan": "^1.11.0",
+    "node-cron": "^3.0.3",
     "multer": "^2.2.0",
     "multer-storage-cloudinary": "^4.0.0",
     "nodemailer": "^9.0.3",

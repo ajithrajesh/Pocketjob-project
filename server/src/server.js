@@ -5,6 +5,7 @@ import { seedJobs } from "./utils/seeder.js";
 import mongoose from "mongoose";
 import http from "http";
 import { Server } from "socket.io";
+import { scheduleSubscriptionExpiryJob } from "./jobs/subscriptionExpiryJob.js";
 
 dotenv.config();
 
@@ -50,6 +51,8 @@ const startServer = async () => {
    
     app.set("io", io);
     app.set("userSockets", userSockets);
+
+    scheduleSubscriptionExpiryJob(app);
 
     server.listen(PORT, () => {
       console.log(`Server is running on http://localhost:${PORT}`);

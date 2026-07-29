@@ -22,6 +22,8 @@ const notificationSchema = new mongoose.Schema(
         "invitation_accepted",
         "invitation_rejected",
         "new_job_post",
+        "subscription_expiring",
+        "subscription_expired",
         "system",
       ],
       required: true,
