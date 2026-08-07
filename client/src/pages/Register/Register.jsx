@@ -35,6 +35,7 @@ function Register() {
     city: "",
     pincode: "",
     categories: [],
+    skills: [],
     // Company specific
     companyName: "",
     organisationId: "",
@@ -62,6 +63,31 @@ function Register() {
         categories: [...formData.categories, category],
       });
     }
+  };
+
+  const [skillInput, setSkillInput] = useState("");
+
+  const addSkill = () => {
+    const value = skillInput.trim();
+    if (!value) return;
+    if (!formData.skills.includes(value)) {
+      setFormData({ ...formData, skills: [...formData.skills, value] });
+    }
+    setSkillInput("");
+  };
+
+  const handleSkillKeyDown = (e) => {
+    if (e.key === "Enter" || e.key === ",") {
+      e.preventDefault();
+      addSkill();
+    }
+  };
+
+  const removeSkill = (skill) => {
+    setFormData({
+      ...formData,
+      skills: formData.skills.filter((s) => s !== skill),
+    });
   };
 
   const validateStep = (step) => {
@@ -457,6 +483,40 @@ function Register() {
                       })}
                     </div>
                     {errors.categories && <div className="text-danger mt-2 small">{errors.categories}</div>}
+                  </div>
+
+                  <div className="col-12 mb-4">
+                    <label className="form-label fw-bold d-block mb-2">Your Skills (optional)</label>
+                    <p className="text-muted small mb-2">Add skills that describe what you're good at — this helps job providers find you.</p>
+                    <div className="d-flex gap-2">
+                      <input
+                        type="text"
+                        className="form-control"
+                        placeholder="e.g. Driving, Cooking, Customer Service"
+                        value={skillInput}
+                        onChange={(e) => setSkillInput(e.target.value)}
+                        onKeyDown={handleSkillKeyDown}
+                      />
+                      <button type="button" className="btn btn-outline-primary" onClick={addSkill}>
+                        Add
+                      </button>
+                    </div>
+                    {formData.skills.length > 0 && (
+                      <div className="d-flex flex-wrap gap-2 mt-3">
+                        {formData.skills.map((skill) => (
+                          <span key={skill} className="badge bg-light text-dark border d-flex align-items-center py-2 px-3">
+                            {skill}
+                            <button
+                              type="button"
+                              className="btn-close ms-2"
+                              style={{ fontSize: "0.6rem" }}
+                              onClick={() => removeSkill(skill)}
+                              aria-label={`Remove ${skill}`}
+                            ></button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   <div className="col-6 mt-3">

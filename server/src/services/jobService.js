@@ -39,11 +39,28 @@ export const createJobService = async (userId, jobData) => {
   return job;
 };
 
+// Category cards shown on the Home/Categories pages. Used to build the
+// "Others" filter (any job whose category isn't one of these).
+const NAMED_CATEGORIES = [
+  "Catering",
+  "Warehouse",
+  "Valet Parking",
+  "Delivery",
+  "Event Staff",
+  "Housekeeping",
+];
+
 export const searchJobsService = async (filters) => {
   const query = {};
   const andConditions = [];
 
-  if (filters.category) {
+  if (filters.others === true || filters.others === "true") {
+    // "Others" tile: catch every job whose category is NOT one of the
+    // named categories above (covers custom/free-text categories too).
+    query.category = {
+      $nin: NAMED_CATEGORIES.map((name) => new RegExp(`^${name}$`, "i")),
+    };
+  } else if (filters.category) {
     query.category = { $regex: filters.category, $options: "i" };
   }
 

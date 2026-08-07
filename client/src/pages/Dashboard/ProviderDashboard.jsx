@@ -340,15 +340,16 @@ function ProviderDashboard() {
     }
   };
 
-  const categoriesList = [
-    "Catering",
-    "Warehouse",
-    "Driver",
-    "Delivery",
-    "Housekeeping",
-    "Event Staff",
-    "Valet Parking",
-  ];
+ const categoriesList = [
+  "Catering",
+  "Warehouse",
+  "Driver",
+  "Delivery",
+  "Housekeeping",
+  "Event Staff",
+  "Valet Parking",
+  "Others",
+];
 
   const fetchMyJobs = async () => {
     try {

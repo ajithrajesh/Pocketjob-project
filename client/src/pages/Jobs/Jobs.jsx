@@ -83,6 +83,7 @@ function Jobs() {
     "Animal Care",
     "Landscaping",
     "Hospitality",
+    "Others",
   ];
 
   // URL parameters synchronization effect
@@ -90,6 +91,7 @@ function Jobs() {
     const urlCategory = searchParams.get("category") || "";
     const urlLocation = searchParams.get("location") || "";
     const urlKeyword = searchParams.get("keyword") || "";
+    const urlOthers = searchParams.get("others") === "true";
     setCategory(urlCategory);
     setLocation(urlLocation);
     setKeyword(urlKeyword);
@@ -98,6 +100,9 @@ function Jobs() {
       try {
         setLoading(true);
         const params = { category: urlCategory, location: urlLocation, keyword: urlKeyword };
+        if (urlOthers) {
+          params.others = true;
+        }
         if (nearMe && coords) {
           params.lat = coords.lat;
           params.lng = coords.lng;
@@ -117,7 +122,12 @@ function Jobs() {
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
-    setSearchParams({ category, location, keyword });
+    const isOthers = searchParams.get("others") === "true";
+    if (isOthers) {
+      setSearchParams({ others: "true", location, keyword });
+    } else {
+      setSearchParams({ category, location, keyword });
+    }
   };
 
   const handleApply = async (jobId, jobTitle) => {
@@ -150,6 +160,11 @@ function Jobs() {
       <div className="text-center mb-5">
         <h2 className="fw-bold text-dark mb-2">Search Jobs Near You</h2>
         <p className="text-muted">Browse part-time and full-time opportunities across every category, location, and skill set.</p>
+        {searchParams.get("others") === "true" && (
+          <p className="text-primary fw-semibold mb-0">
+            Showing jobs outside the main categories
+          </p>
+        )}
       </div>
 
       {/* Search Panel */}
@@ -178,11 +193,16 @@ function Jobs() {
             </span>
             <select
               className="form-select border-start-0 bg-light"
-              value={category}
+              value={searchParams.get("others") === "true" ? "Others" : category}
               onChange={(e) => {
                 const selectedCat = e.target.value;
-                setCategory(selectedCat);
-                setSearchParams({ category: selectedCat, location, keyword });
+                if (selectedCat === "Others") {
+                  setCategory("");
+                  setSearchParams({ others: "true", location, keyword });
+                } else {
+                  setCategory(selectedCat);
+                  setSearchParams({ category: selectedCat, location, keyword });
+                }
               }}
             >
               <option value="">All Categories</option>

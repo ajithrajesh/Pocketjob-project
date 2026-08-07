@@ -7,6 +7,7 @@ import {
   FaCar,
   FaBroom,
   FaPeopleCarry,
+  FaEllipsisH,
 } from "react-icons/fa";
 
 const categories = [
@@ -46,13 +47,24 @@ const categories = [
     title: "Housekeeping",
     jobs: "95+ Jobs",
   },
+  {
+    id: 7,
+    icon: <FaEllipsisH />,
+    title: "Others",
+    jobs: "Explore More",
+    isOthers: true,
+  },
 ];
 
 function Categories() {
   const navigate = useNavigate();
 
-  const handleCategoryClick = (title) => {
-    navigate(`/jobs?category=${encodeURIComponent(title)}`);
+  const handleCategoryClick = (category) => {
+    if (category.isOthers) {
+      navigate("/jobs?others=true");
+    } else {
+      navigate(`/jobs?category=${encodeURIComponent(category.title)}`);
+    }
   };
 
   return (
@@ -83,7 +95,7 @@ function Categories() {
 
               <div 
                 className="category-card" 
-                onClick={() => handleCategoryClick(category.title)}
+                onClick={() => handleCategoryClick(category)}
                 style={{ cursor: "pointer" }}
               >
 

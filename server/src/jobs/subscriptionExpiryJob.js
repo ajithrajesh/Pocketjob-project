@@ -1,23 +1,9 @@
-// Daily cron job that:
-//   1. Reminds companies whose paid subscription is about to expire
-//      (at 7, 3, and 1 day(s) before subscription.endDate), and
-//   2. Auto-downgrades any company whose subscription has already
-//      expired back to the "free" plan, mirroring the manual
-//      downgrade logic in subscriptionController.js.
-//
-// Reminders and downgrade notices reuse notificationService's
-// createAndSendNotification, so recipients get both an in-app
-// notification (+ live socket push, if online) and an email, the
-// same way job invitations / application updates already work.
 
 import cron from "node-cron";
 import User from "../models/User.js";
 import { createAndSendNotification } from "../services/notificationService.js";
 
-// How many days before expiry to send a reminder. Each threshold is
-// matched against the user's exact calendar day of expiry, so a given
-// user gets at most one reminder per threshold rather than a fresh
-// email every single day their subscription happens to be "close".
+
 const REMINDER_DAYS_BEFORE = [7, 3, 1];
 
 const startOfDay = (date) => {
@@ -108,8 +94,6 @@ const downgradeExpiredSubscriptions = async (app) => {
   }
 };
 
-// Exported directly so it can also be triggered manually (e.g. from a
-// one-off script or an admin endpoint) without waiting for the cron tick.
 export const runSubscriptionExpiryCheck = async (app = null) => {
   try {
     await sendExpiryReminders(app);
@@ -119,9 +103,6 @@ export const runSubscriptionExpiryCheck = async (app = null) => {
   }
 };
 
-// Runs once a day at 09:00 server time. Pass the Express `app` instance
-// so reminders/notices can also be pushed live over socket.io to users
-// who are currently online (same pattern as notificationService elsewhere).
 export const scheduleSubscriptionExpiryJob = (app) => {
   cron.schedule("0 9 * * *", () => {
     console.log("[subscriptionExpiryJob] Running scheduled subscription expiry check...");

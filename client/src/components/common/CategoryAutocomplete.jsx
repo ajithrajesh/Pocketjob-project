@@ -7,7 +7,8 @@ const POPULAR_CATEGORIES = [
   "Delivery",
   "Housekeeping",
   "Event Staff",
-  "Valet Parking"
+  "Valet Parking",
+  "Others"
 ];
 
 function CategoryAutocomplete({ value, onChange, placeholder, className, style }) {

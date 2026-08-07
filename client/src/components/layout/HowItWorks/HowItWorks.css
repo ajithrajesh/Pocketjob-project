@@ -20,11 +20,23 @@
 
     height:100%;
 
+    cursor:pointer;
+
 }
 
 .step-card:hover{
 
     transform:translateY(-8px);
+
+    box-shadow:0 10px 25px rgba(37,99,235,.15);
+
+}
+
+.step-card:focus-visible{
+
+    outline:2px solid #2563eb;
+
+    outline-offset:3px;
 
 }
 

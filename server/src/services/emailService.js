@@ -137,3 +137,77 @@ export const sendPresetEmail = async ({
     console.error("❌ Error sending preset email:", error.message);
   }
 };
+
+export const sendPasswordResetEmail = async ({ to, recipientName = "User", resetUrl }) => {
+  if (!to) {
+    console.warn("⚠️ Cannot send email: No destination email specified.");
+    return;
+  }
+
+  try {
+    const transport = await getTransporter();
+
+    const senderEmail = process.env.EMAIL_USER || "no-reply@pocketjob.com";
+    const senderName = "pocketJob Security";
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <style>
+          body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8f9fa; margin: 0; padding: 20px; }
+          .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+          .header { background: linear-gradient(135deg, #0d6efd, #0b5ed7); padding: 24px; text-align: center; color: white; }
+          .header h1 { margin: 0; font-size: 24px; font-weight: 700; letter-spacing: 0.5px; }
+          .body-content { padding: 30px 24px; color: #212529; }
+          .title { font-size: 18px; font-weight: 600; color: #0d6efd; margin-top: 0; }
+          .message-box { background: #f8f9fa; border: 1px solid #e9ecef; padding: 16px; border-radius: 6px; margin: 16px 0; }
+          .btn { display: inline-block; background-color: #0d6efd; color: #ffffff !important; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: 600; margin-top: 20px; }
+          .footer { background: #f1f3f5; padding: 16px; text-align: center; font-size: 12px; color: #6c757d; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>pocketJob</h1>
+          </div>
+          <div class="body-content">
+            <p>Hello <strong>${recipientName}</strong>,</p>
+            <h3 class="title">Password Reset Request</h3>
+            
+            <div class="message-box">
+              <p style="margin: 0; line-height: 1.5;">We received a request to reset the password for your pocketJob account. Please click the button below to set a new password. This link will expire in 30 minutes.</p>
+            </div>
+
+            <div style="text-align: center;">
+              <a href="${resetUrl}" class="btn">Reset Password</a>
+            </div>
+
+            <p style="margin-top: 24px; font-size: 13px; color: #6c757d;">If you did not request a password reset, please ignore this email. Your password will remain unchanged.</p>
+            <p style="font-size: 12px; word-break: break-all; color: #6c757d;">If you are having trouble with the button, copy and paste the following URL into your browser: <br/>${resetUrl}</p>
+          </div>
+          <div class="footer">
+            <p>This is an automated security email sent to <strong>${to}</strong>.</p>
+            <p>&copy; ${new Date().getFullYear()} pocketJob. All rights reserved.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    const mailOptions = {
+      from: `"${senderName}" <${senderEmail}>`,
+      to,
+      subject: "[pocketJob] Reset Your Password",
+      text: `Hello ${recipientName},\n\nWe received a request to reset the password for your pocketJob account. Please reset your password by using the link below:\n\n${resetUrl}\n\nThis link is valid for 30 minutes. If you did not request this, you can ignore this email.\n\nBest regards,\npocketJob Team`,
+      html: htmlContent,
+    };
+
+    const info = await transport.sendMail(mailOptions);
+    console.log(`✉️ Reset Password Email successfully sent to ${to} (MessageId: ${info.messageId || "ok"})`);
+    return info;
+  } catch (error) {
+    console.error("❌ Error sending password reset email:", error.message);
+  }
+};

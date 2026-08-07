@@ -4,7 +4,10 @@ import DashboardLayout from "../layouts/DashboardLayout";
 import Home from "../pages/Home/Home";
 import Login from "../pages/Login/Login";
 import Register from "../pages/Register/Register";
+import ForgotPassword from "../pages/Login/ForgotPassword";
+import ResetPassword from "../pages/Login/ResetPassword";
 import About from "../pages/About/About";
+import CategoriesPage from "../pages/Categories/Categories";
 import Jobs from "../pages/Jobs/Jobs";
 import JobDetails from "../pages/Jobs/JobDetails";
 
@@ -36,10 +39,13 @@ function AppRoutes() {
         <Route path="/jobs" element={<Jobs />} />
         <Route path="/jobs/:id" element={<JobDetails />} />
         <Route path="/about" element={<About />} />
+        <Route path="/categories" element={<CategoriesPage />} />
       </Route>
 
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password/:token" element={<ResetPassword />} />
 
       {}
       <Route path="/dashboard" element={<DashboardLayout />}>

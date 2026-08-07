@@ -21,9 +21,9 @@ export const createOrder = async (req, res) => {
 
     let amount = 0;
     if (plan === "basic") {
-      amount = 499; // 499 INR
+      amount = 499; 
     } else if (plan === "premium") {
-      amount = 999; // 999 INR
+      amount = 999; 
     }
 
     const key_id = process.env.RAZORPAY_KEY_ID || "rzp_test_5n4ZJ7wA1UqM8N";
@@ -42,7 +42,7 @@ export const createOrder = async (req, res) => {
     }
 
     const options = {
-      amount: amount * 100, // Razorpay amount is in paise (1 INR = 100 paise)
+      amount: amount * 100, 
       currency: "INR",
       receipt: `sub_${req.user._id.toString().slice(-8)}_${Date.now()}`,
     };

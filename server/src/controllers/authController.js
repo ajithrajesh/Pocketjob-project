@@ -1,4 +1,4 @@
-import { registerService, loginService } from "../services/authService.js";
+import { registerService, loginService, forgotPasswordService, resetPasswordService } from "../services/authService.js";
 import User from "../models/User.js";
 
 export const registerUser = async (req, res) => {
@@ -45,6 +45,43 @@ export const getMe = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+export const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const message = await forgotPasswordService(email);
+
+    res.status(200).json({
+      success: true,
+      message,
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+export const resetPassword = async (req, res) => {
+  try {
+    const { token } = req.params;
+    const { password, confirmPassword } = req.body;
+
+    const data = await resetPasswordService(token, password, confirmPassword);
+
+    res.status(200).json({
+      success: true,
+      message: "Password Reset Successful",
+      ...data,
+    });
+  } catch (error) {
+    res.status(400).json({
       success: false,
       message: error.message,
     });

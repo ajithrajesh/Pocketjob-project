@@ -44,7 +44,7 @@ function UserDashboard() {
   }, [authUser]);
   
   // Job Search State
-  const [searchParams, setSearchParams] = useState({ category: "", location: "", keyword: "" });
+  const [searchParams, setSearchParams] = useState({ category: "", location: "", keyword: "", others: false });
   const [jobs, setJobs] = useState([]);
   const [loadingJobs, setLoadingJobs] = useState(false);
 
@@ -124,6 +124,7 @@ function UserDashboard() {
     "Housekeeping",
     "Event Staff",
     "Valet Parking",
+    "Others",
   ];
 
   // Fetch Full Profile
@@ -219,7 +220,7 @@ function UserDashboard() {
 
   useEffect(() => {
     fetchJobs();
-  }, [searchParams.category, nearMe, coords, radius]);
+  }, [searchParams.category, searchParams.others, nearMe, coords, radius]);
 
   useEffect(() => {
     if (activeTab === "recommended") {
@@ -393,8 +394,15 @@ function UserDashboard() {
               <label className="form-label text-muted small">Category</label>
               <select
                 className="form-select"
-                value={searchParams.category}
-                onChange={(e) => setSearchParams({ ...searchParams, category: e.target.value })}
+                value={searchParams.others ? "Others" : searchParams.category}
+                onChange={(e) => {
+                  const selected = e.target.value;
+                  if (selected === "Others") {
+                    setSearchParams({ ...searchParams, category: "", others: true });
+                  } else {
+                    setSearchParams({ ...searchParams, category: selected, others: false });
+                  }
+                }}
               >
                 <option value="">All Categories</option>
                 {categoriesList.map((cat) => (
