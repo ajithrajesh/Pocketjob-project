@@ -50,9 +50,9 @@ function Navbar() {
             </li>
 
             {isAuthenticated ? (
-              <li className="nav-item ms-lg-2">
+              <li className="nav-item ms-lg-2 mt-2 mt-lg-0">
                 <Link
-                  className="btn btn-primary"
+                  className="btn btn-primary dashboard-btn"
                   to="/dashboard"
                 >
                   Dashboard

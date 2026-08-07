@@ -25,7 +25,7 @@ function Hero() {
 
           <div className="col-lg-6 hero-left">
 
-            <span className="badge bg-primary mb-3 px-3 py-2">
+            <span className="hero-badge">
               Find Part-Time Jobs Near You
             </span>
 

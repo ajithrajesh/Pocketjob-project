@@ -130,6 +130,82 @@ img{
   overflow-x: hidden;
 }
 
+/* Mini sidebar: collapsed by default, expands on hover (desktop only) */
+@media (min-width: 768px) {
+  .dashboard-sidebar {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    height: 100vh !important;
+    flex: none;
+    width: 80px;
+    z-index: 1030;
+    transition: width 0.25s ease;
+  }
+
+  .dashboard-sidebar:hover {
+    width: 250px;
+  }
+
+  .dashboard-main {
+    margin-left: 80px;
+    width: calc(100% - 80px);
+    transition: margin-left 0.25s ease, width 0.25s ease;
+  }
+
+  .dashboard-sidebar:hover ~ .dashboard-main {
+    margin-left: 250px;
+    width: calc(100% - 250px);
+  }
+
+  .dashboard-sidebar .sidebar-link-text {
+    display: inline-block;
+    max-width: 0;
+    opacity: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    transition: opacity 0.15s ease, max-width 0.25s ease;
+  }
+
+  .dashboard-sidebar:hover .sidebar-link-text {
+    max-width: 200px;
+    opacity: 1;
+    transition: opacity 0.25s ease 0.05s, max-width 0.25s ease;
+  }
+
+  .dashboard-sidebar .sidebar-nav-link,
+  .dashboard-sidebar .sidebar-brand,
+  .dashboard-sidebar .sidebar-user-card .d-flex,
+  .dashboard-sidebar .sidebar-logout-btn {
+    justify-content: center;
+  }
+
+  .dashboard-sidebar:hover .sidebar-nav-link,
+  .dashboard-sidebar:hover .sidebar-brand,
+  .dashboard-sidebar:hover .sidebar-user-card .d-flex,
+  .dashboard-sidebar:hover .sidebar-logout-btn {
+    justify-content: flex-start;
+  }
+
+  .dashboard-sidebar .sidebar-icon {
+    margin-right: 0;
+  }
+
+  .dashboard-sidebar:hover .sidebar-icon {
+    margin-right: 8px;
+  }
+
+  .dashboard-sidebar .sidebar-user-card {
+    text-align: center;
+    padding: 14px 8px;
+  }
+
+  .dashboard-sidebar:hover .sidebar-user-card {
+    text-align: left;
+    padding: 14px 16px;
+  }
+}
+
 .sidebar-container ul.nav {
   width: 100%;
   min-width: 0;
@@ -180,8 +256,12 @@ img{
 .sidebar-nav-link svg {
   flex-shrink: 0;
   font-size: 0.85rem;
-  margin-right: 6px !important;
   margin-top: 1px;
+}
+
+.sidebar-icon {
+  flex-shrink: 0;
+  margin-right: 8px;
 }
 
 .sidebar-nav-link:hover {
@@ -193,7 +273,7 @@ img{
 .sidebar-nav-link.active {
   background: linear-gradient(90deg, #2563eb 0%, #1d4ed8 100%) !important;
   color: #ffffff !important;
-  box-shadow: 0 4px 15px rgba(37, 99, 235, 0.35);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-left: 3px solid #93c5fd;
 }

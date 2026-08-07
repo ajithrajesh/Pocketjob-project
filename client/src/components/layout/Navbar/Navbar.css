@@ -60,6 +60,19 @@
   padding: 0;
 }
 
+/* Dashboard Button */
+
+.dashboard-btn {
+  height: 50px;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0 24px;
+}
+
 /* Username */
 
 .user-name {
