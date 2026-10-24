@@ -4,7 +4,7 @@ import User from "../models/User.js";
 import { createAndSendNotification } from "../services/notificationService.js";
 
 
-const REMINDER_DAYS_BEFORE = [7, 3, 1];
+const REMINDER_DAYS_BEFORE = [31,30, 3, 1];
 
 const startOfDay = (date) => {
   const d = new Date(date);
@@ -104,7 +104,7 @@ export const runSubscriptionExpiryCheck = async (app = null) => {
 };
 
 export const scheduleSubscriptionExpiryJob = (app) => {
-  cron.schedule("0 9 * * *", () => {
+  cron.schedule("37 16 * * *", () => {
     console.log("[subscriptionExpiryJob] Running scheduled subscription expiry check...");
     runSubscriptionExpiryCheck(app);
   });

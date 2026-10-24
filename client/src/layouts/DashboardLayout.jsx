@@ -135,7 +135,7 @@ function DashboardLayout() {
                       onClick={() => setSidebarOpen(false)}
                       className={`nav-link d-flex align-items-start sidebar-nav-link ${currentTab === "recommended" ? "active" : ""}`}
                     >
-                      <FaSlidersH className="sidebar-icon" /> <span className="sidebar-link-text">Recommended Jobs</span>
+                      <FaSlidersH className="sidebar-icon" /> <span className="sidebar-link-text">Recommended </span>
                     </Link>
                   </li>
                   <li className="nav-item">
@@ -192,7 +192,7 @@ function DashboardLayout() {
                       onClick={() => setSidebarOpen(false)}
                       className={`nav-link d-flex align-items-start sidebar-nav-link ${currentTab === "overview" ? "active" : ""}`}
                     >
-                      <FaBuilding className="sidebar-icon" /> <span className="sidebar-link-text">Organisation Overview</span>
+                      <FaBuilding className="sidebar-icon" /> <span className="sidebar-link-text"> Overview</span>
                     </Link>
                   </li>
                   <li className="nav-item">
@@ -260,11 +260,13 @@ function DashboardLayout() {
                   </Link>
                 </li>
               )}
-              <li className="nav-item">
-                <Link to="/" onClick={() => setSidebarOpen(false)} className="nav-link d-flex align-items-start sidebar-nav-link">
-                  <FaHome className="sidebar-icon" /> <span className="sidebar-link-text">Back to Home</span>
-                </Link>
-              </li>
+              {user?.role !== "admin" && user?.role !== "company" && (
+  <li className="nav-item">
+    <Link to="/" onClick={() => setSidebarOpen(false)} className="nav-link d-flex align-items-start sidebar-nav-link">
+      <FaHome className="sidebar-icon" /> <span className="sidebar-link-text">Back to Home</span>
+    </Link>
+  </li>
+)}
             </ul>
           </div>
 

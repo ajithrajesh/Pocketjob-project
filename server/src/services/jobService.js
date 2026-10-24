@@ -147,6 +147,9 @@ export const searchJobsService = async (filters) => {
 export const getRecommendedJobsService = async (userId) => {
   const user = await User.findById(userId);
 
+
+if(!applications.findById(user.id)){
+  
   if (!user) {
     throw new Error("User not found");
   }
@@ -165,6 +168,12 @@ export const getRecommendedJobsService = async (userId) => {
 
   return jobs;
 };
+}
+
+
+
+
+
 
 export const getMyJobsService = async (userId) => {
   const jobs = await Job.find({ company: userId }).sort({ createdAt: -1 });
