@@ -63,4 +63,5 @@ const run = async () => {
 run().catch((error) => {
   console.error("Backfill failed:", error);
   process.exit(1);
-});git add server/src/scripts/backfillJobGeo.js
+});
+

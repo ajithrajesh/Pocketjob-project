@@ -18,7 +18,12 @@ function DashboardLayout() {
   // Initialize socket connection & activity toast listeners
   useEffect(() => {
     if (user && user._id) {
-      const socketInstance = io("http://localhost:5000");
+      const socketUrl =
+        import.meta.env.VITE_SOCKET_URL ||
+        (import.meta.env.VITE_API_BASE_URL
+          ? import.meta.env.VITE_API_BASE_URL.replace(/\/api\/?$/, "")
+          : "http://localhost:5000");
+      const socketInstance = io(socketUrl);
       setSocket(socketInstance);
 
       socketInstance.emit("join", user._id);

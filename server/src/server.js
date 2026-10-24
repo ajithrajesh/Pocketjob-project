@@ -20,12 +20,17 @@ const startServer = async () => {
     } else {
       console.warn("WARNING: Skipping job database seeding because the database is offline.");
     }
-
     const server = http.createServer(app);
+
+    const allowedSocketOrigins = process.env.CLIENT_URL
+      ? process.env.CLIENT_URL.split(",").map((s) => s.trim())
+      : "*";
+
     const io = new Server(server, {
       cors: {
-        origin: "*",
+        origin: allowedSocketOrigins,
         methods: ["GET", "POST", "PUT", "DELETE"],
+        credentials: true,
       },
     });
 
@@ -54,9 +59,25 @@ const startServer = async () => {
 
     scheduleSubscriptionExpiryJob(app);
 
-    server.listen(PORT, () => {
-      console.log(`Server is running on http://localhost:${PORT}`);
+    server.listen(PORT, "0.0.0.0", () => {
+      console.log(`Server is running on port ${PORT} (env: ${process.env.NODE_ENV || "development"})`);
     });
+
+    const handleShutdown = async (signal) => {
+      console.log(`\nReceived ${signal}. Gracefully shutting down...`);
+      server.close(async () => {
+        try {
+          await mongoose.connection.close();
+          console.log("MongoDB connection closed.");
+        } catch (err) {
+          console.error("Error closing MongoDB connection:", err);
+        }
+        process.exit(0);
+      });
+    };
+
+    process.on("SIGTERM", () => handleShutdown("SIGTERM"));
+    process.on("SIGINT", () => handleShutdown("SIGINT"));
   } catch (error) {
     console.error("Server Failed to Start:", error.message);
   }

@@ -1,0 +1,15 @@
+{
+  "name": "pocketjob-project",
+  "version": "1.0.0",
+  "private": true,
+  "description": "PocketJob - Connecting workforce and employers",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "build": "npm --prefix server install",
+    "start": "node server/src/server.js",
+    "dev:server": "npm --prefix server run dev",
+    "dev:client": "npm --prefix client run dev"
+  }
+}
